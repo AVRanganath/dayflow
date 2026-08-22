@@ -90,9 +90,7 @@ export default function PayrollPage() {
           <SalaryBreakdown
             payroll={payroll}
             payableDays={
-              latest
-                ? { payableDays: latest.payableDays, workingDays: latest.workingDays }
-                : null
+              latest ? { payableDays: latest.payableDays, workingDays: latest.workingDays } : null
             }
           />
           <SalaryHistoryTable
@@ -116,9 +114,7 @@ export default function PayrollPage() {
       {isManagement && (
         <div className="mt-2 flex flex-col gap-4">
           <div className="border-t border-border pt-6">
-            <h2 className="font-display text-base font-bold text-text-primary">
-              Company Payroll
-            </h2>
+            <h2 className="font-display text-base font-bold text-text-primary">Company Payroll</h2>
             <p className="mt-0.5 text-sm text-text-secondary">
               {isAdmin
                 ? 'Review, edit salary structures, and export payroll.'

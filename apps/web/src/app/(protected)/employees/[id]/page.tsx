@@ -119,7 +119,11 @@ export default function EmployeeViewPage() {
   if (error || !employee) {
     return (
       <div className="flex flex-col gap-4">
-        <Button variant="ghost" leftIcon={<ArrowLeft className="h-4 w-4" />} onClick={() => router.back()}>
+        <Button
+          variant="ghost"
+          leftIcon={<ArrowLeft className="h-4 w-4" />}
+          onClick={() => router.back()}
+        >
           Back
         </Button>
         <div className="rounded-card border border-border bg-card p-8 text-center shadow-card">
@@ -162,7 +166,9 @@ export default function EmployeeViewPage() {
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[22px] font-bold text-text-primary">{fullName(employee)}</h1>
+          <h1 className="font-display text-[22px] font-bold text-text-primary">
+            {fullName(employee)}
+          </h1>
           <p className="mt-0.5 text-sm text-text-secondary">{employee.designation ?? '—'}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
             {departmentName && <StatusBadge variant="info">{departmentName}</StatusBadge>}
@@ -219,7 +225,9 @@ export default function EmployeeViewPage() {
               <ReadonlyField label="Emp Code" value={employee.employeeCode} />
             </div>
             <div className="border-t border-hairline pt-6">
-              <h4 className="mb-4 font-display text-sm font-bold text-text-primary">Bank Details</h4>
+              <h4 className="mb-4 font-display text-sm font-bold text-text-primary">
+                Bank Details
+              </h4>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
                 <ReadonlyField label="Account Number" value={employee.bankAccountNumber} />
                 <ReadonlyField label="Bank Name" value={employee.bankName} />

@@ -42,7 +42,8 @@ export function LeaveRequestCard({
   const employeeName = `${request.employee.firstName} ${request.employee.lastName}`;
 
   const reasonIsLong = request.reason.length > 120;
-  const shownReason = expanded || !reasonIsLong ? request.reason : `${request.reason.slice(0, 120)}…`;
+  const shownReason =
+    expanded || !reasonIsLong ? request.reason : `${request.reason.slice(0, 120)}…`;
 
   const startAction = (next: PendingAction) => {
     setAction(next);
@@ -80,9 +81,7 @@ export function LeaveRequestCard({
               <span className="text-sm font-semibold text-text-primary">{employeeName}</span>
               <StatusBadge status={request.leaveType} />
             </div>
-            {departmentName && (
-              <p className="text-xs text-text-secondary">{departmentName}</p>
-            )}
+            {departmentName && <p className="text-xs text-text-secondary">{departmentName}</p>}
             <p className="mt-1 text-[13px] font-medium text-text-primary">
               {formatDate(request.startDate)} – {formatDate(request.endDate)}{' '}
               <span className="font-normal text-text-secondary">({request.totalDays} days)</span>
@@ -107,9 +106,7 @@ export function LeaveRequestCard({
             <p className="mt-2 text-[11px] text-text-muted">
               Applied on {formatDate(request.createdAt)}
             </p>
-            {balanceLine && (
-              <p className="text-[11px] text-text-muted">Balance — {balanceLine}</p>
-            )}
+            {balanceLine && <p className="text-[11px] text-text-muted">Balance — {balanceLine}</p>}
             {request.attachmentUrl && (
               <a
                 href={request.attachmentUrl}
@@ -160,7 +157,12 @@ export function LeaveRequestCard({
             onChange={(e) => setComment(e.target.value)}
           />
           <div className="mt-3 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setAction(null)} disabled={isSubmitting}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAction(null)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button

@@ -29,9 +29,7 @@ function Line({ label, amount, emphasis = false, hint }: LineProps) {
       <div className="flex flex-col">
         <span
           className={
-            emphasis
-              ? 'text-[13px] font-bold text-text-primary'
-              : 'text-[13px] text-text-secondary'
+            emphasis ? 'text-[13px] font-bold text-text-primary' : 'text-[13px] text-text-secondary'
           }
         >
           {label}

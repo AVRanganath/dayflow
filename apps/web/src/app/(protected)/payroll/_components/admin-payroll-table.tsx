@@ -108,9 +108,7 @@ export function AdminPayrollTable({ canEdit }: AdminPayrollTableProps) {
       render: (r) => (
         <div className="flex items-center gap-2.5">
           <Avatar name={r.employeeName ?? r.employeeId} size="sm" />
-          <span className="font-medium text-text-primary">
-            {r.employeeName ?? r.employeeId}
-          </span>
+          <span className="font-medium text-text-primary">{r.employeeName ?? r.employeeId}</span>
         </div>
       ),
     },
@@ -132,18 +130,14 @@ export function AdminPayrollTable({ canEdit }: AdminPayrollTableProps) {
       header: 'Deductions',
       align: 'right',
       render: (r) => (
-        <span className="tabular-nums">
-          {r.deductions != null ? formatINR(r.deductions) : '—'}
-        </span>
+        <span className="tabular-nums">{r.deductions != null ? formatINR(r.deductions) : '—'}</span>
       ),
     },
     {
       key: 'net',
       header: 'Net',
       align: 'right',
-      render: (r) => (
-        <span className="font-semibold tabular-nums">{formatINR(r.netSalary)}</span>
-      ),
+      render: (r) => <span className="font-semibold tabular-nums">{formatINR(r.netSalary)}</span>,
     },
     {
       key: 'status',
@@ -157,9 +151,7 @@ export function AdminPayrollTable({ canEdit }: AdminPayrollTableProps) {
       render: (r) =>
         canEdit ? (
           <button
-            onClick={() =>
-              setEditing({ id: r.employeeId, name: r.employeeName ?? r.employeeId })
-            }
+            onClick={() => setEditing({ id: r.employeeId, name: r.employeeName ?? r.employeeId })}
             className="inline-flex h-8 w-8 items-center justify-center rounded text-primary transition-colors hover:bg-primary-tint"
             aria-label={`Edit salary structure for ${r.employeeName ?? r.employeeId}`}
           >
@@ -216,9 +208,7 @@ export function AdminPayrollTable({ canEdit }: AdminPayrollTableProps) {
         keyExtractor={(r) => r.payrollId ?? r.employeeId}
         isLoading={isLoading}
         emptyState={
-          <p className="text-sm text-text-muted">
-            No payroll records for this month yet.
-          </p>
+          <p className="text-sm text-text-muted">No payroll records for this month yet.</p>
         }
       />
 

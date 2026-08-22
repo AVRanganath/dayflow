@@ -56,10 +56,7 @@ export function AttendanceSummary({ rows }: AttendanceSummaryProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {tiles.map((tile) => (
-        <div
-          key={tile.label}
-          className="rounded-card border border-border bg-card p-4 shadow-card"
-        >
+        <div key={tile.label} className="rounded-card border border-border bg-card p-4 shadow-card">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tile.color }} />
             <span className="text-[12px] font-medium text-text-secondary">{tile.label}</span>

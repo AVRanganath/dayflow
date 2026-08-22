@@ -40,10 +40,7 @@ export function ApplyLeaveModal({ isOpen, onClose, onApplied }: ApplyLeaveModalP
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const totalDays = useMemo(
-    () => countWorkingDays(startDate, endDate),
-    [startDate, endDate],
-  );
+  const totalDays = useMemo(() => countWorkingDays(startDate, endDate), [startDate, endDate]);
 
   const reset = useCallback(() => {
     setType('PAID');

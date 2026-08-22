@@ -3,11 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Button, Input, useToast } from '../../../../components/ui';
 import { formatINR } from '../../../../lib/format';
-import {
-  computeSalary,
-  getEmployeePayroll,
-  updateSalaryStructure,
-} from '../../../../lib/payroll';
+import { computeSalary, getEmployeePayroll, updateSalaryStructure } from '../../../../lib/payroll';
 
 interface EditSalaryModalProps {
   isOpen: boolean;
@@ -209,9 +205,7 @@ export function EditSalaryModal({ isOpen, onClose, employee, onSaved }: EditSala
           </div>
 
           <div className="mt-4 flex items-center justify-between rounded bg-primary-tint px-4 py-2.5">
-            <span className="text-[13px] font-semibold text-primary">
-              Monthly Net (take-home)
-            </span>
+            <span className="text-[13px] font-semibold text-primary">Monthly Net (take-home)</span>
             <span className="font-display text-base font-bold text-primary tabular-nums">
               {formatINR(computed.monthlyNet)}
             </span>

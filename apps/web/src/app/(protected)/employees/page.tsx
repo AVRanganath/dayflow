@@ -12,10 +12,7 @@ import {
   type Department,
   type Employee,
 } from '../../../lib/employees';
-import {
-  EmployeeFilters,
-  type EmployeeFilterValues,
-} from './_components/employee-filters';
+import { EmployeeFilters, type EmployeeFilterValues } from './_components/employee-filters';
 import { EmployeeTable } from './_components/employee-table';
 import { EmployeeCard } from './_components/employee-card';
 import { EmployeePagination } from './_components/employee-pagination';

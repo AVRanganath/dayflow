@@ -43,10 +43,7 @@ export function CurrentSalaryCard({
     setIsDownloading(true);
     try {
       const [y, m] = (latest?.month ?? '').split('-').map((p) => Number(p));
-      const blob = await downloadPayslip(
-        employeeId,
-        y && m ? { month: m, year: y } : undefined,
-      );
+      const blob = await downloadPayslip(employeeId, y && m ? { month: m, year: y } : undefined);
       triggerBlobDownload(blob, `payslip-${latest?.month ?? 'current'}.pdf`);
       toast.success('Payslip downloaded.');
     } catch (err) {

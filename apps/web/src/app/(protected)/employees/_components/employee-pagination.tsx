@@ -40,8 +40,7 @@ export function EmployeePagination({
   return (
     <div className="flex items-center justify-between rounded-card border border-border bg-card px-4 py-3 shadow-card">
       <div className="text-[13px] text-text-secondary">
-        Showing{' '}
-        <span className="font-medium text-text-primary">{start}</span>–
+        Showing <span className="font-medium text-text-primary">{start}</span>–
         <span className="font-medium text-text-primary">{end}</span>
       </div>
       <div className="flex items-center gap-1.5">

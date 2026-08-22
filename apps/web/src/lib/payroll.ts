@@ -138,7 +138,9 @@ export function getMyPayroll(): Promise<MyPayroll> {
 }
 
 /** Fetch the company payroll list for a month/year (admin, `GET /payroll`). */
-export function listPayroll(params?: PayrollListQuery & { cursor?: string }): Promise<PayrollListRow[]> {
+export function listPayroll(
+  params?: PayrollListQuery & { cursor?: string },
+): Promise<PayrollListRow[]> {
   return api.get<PayrollListRow[]>(PAYROLL_ROUTES.base, {
     params: params
       ? {
@@ -234,9 +236,7 @@ function escapeCsvField(input: string | number | null | undefined): string {
 /** Serializes rows to a CSV string using the given columns (order preserved). */
 export function toCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
   const headerLine = columns.map((c) => escapeCsvField(c.header)).join(',');
-  const body = rows.map((row) =>
-    columns.map((c) => escapeCsvField(c.value(row))).join(','),
-  );
+  const body = rows.map((row) => columns.map((c) => escapeCsvField(c.value(row))).join(','));
   return [headerLine, ...body].join('\n');
 }
 
@@ -305,9 +305,7 @@ export function computeSalary(wage: number, config?: SalaryConfigInput): Compute
     safeWage - (basic + hra + standardAllowance + performanceBonus + lta),
   );
 
-  const gross = round2(
-    basic + hra + standardAllowance + performanceBonus + lta + fixedAllowance,
-  );
+  const gross = round2(basic + hra + standardAllowance + performanceBonus + lta + fixedAllowance);
 
   const pfEmployee = round2((basic * cfg.pfEmployeePct) / 100);
   const pfEmployer = round2((basic * cfg.pfEmployerPct) / 100);

@@ -143,7 +143,12 @@ export function PrivateInfoTab({ employee, onSaved }: PrivateInfoTabProps) {
       </div>
 
       <div className="mt-1">
-        <Button variant="primary" onClick={handleSave} isLoading={saving} leftIcon={<Save className="h-4 w-4" />}>
+        <Button
+          variant="primary"
+          onClick={handleSave}
+          isLoading={saving}
+          leftIcon={<Save className="h-4 w-4" />}
+        >
           Save Changes
         </Button>
       </div>

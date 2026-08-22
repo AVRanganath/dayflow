@@ -39,20 +39,14 @@ export function LeaveHistoryTable({ rows, isLoading = false }: LeaveHistoryTable
   }, [rows]);
 
   const yearOptions = useMemo(
-    () => [
-      { label: 'All years', value: 'ALL' },
-      ...years.map((y) => ({ label: y, value: y })),
-    ],
+    () => [{ label: 'All years', value: 'ALL' }, ...years.map((y) => ({ label: y, value: y }))],
     [years],
   );
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
-      if (
-        yearFilter !== 'ALL' &&
-        String(new Date(r.startDate).getUTCFullYear()) !== yearFilter
-      ) {
+      if (yearFilter !== 'ALL' && String(new Date(r.startDate).getUTCFullYear()) !== yearFilter) {
         return false;
       }
       return true;
@@ -74,9 +68,9 @@ export function LeaveHistoryTable({ rows, isLoading = false }: LeaveHistoryTable
 
   const reviewerComment = (r: MyLeaveRow): string | null =>
     r.status === 'REJECTED'
-      ? r.reviewerComment ?? 'No reason provided'
+      ? (r.reviewerComment ?? 'No reason provided')
       : r.status === 'APPROVED'
-        ? r.reviewerComment ?? 'Approved'
+        ? (r.reviewerComment ?? 'Approved')
         : null;
 
   return (

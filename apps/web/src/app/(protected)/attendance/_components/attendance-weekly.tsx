@@ -11,17 +11,22 @@ export interface AttendanceWeeklyProps {
   isLoading?: boolean;
 }
 
-const WEEKDAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEKDAY_LABELS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
 /**
  * Weekly attendance table (PAGE 7): Day | Date | Check In | Check Out | Hours Worked |
  * Status, with a totals row. Data from `GET /attendance/me?range=weekly`.
  */
 export function AttendanceWeekly({ rows, isLoading = false }: AttendanceWeeklyProps) {
-  const totalHours = useMemo(
-    () => rows.reduce((sum, r) => sum + (r.hoursWorked || 0), 0),
-    [rows],
-  );
+  const totalHours = useMemo(() => rows.reduce((sum, r) => sum + (r.hoursWorked || 0), 0), [rows]);
 
   const columns: Column<MyAttendanceRow>[] = [
     {

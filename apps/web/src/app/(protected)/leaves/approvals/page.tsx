@@ -190,7 +190,11 @@ export default function LeaveApprovalsPage() {
           <h1 className="font-display text-2xl font-bold text-text-primary">Leave Approvals</h1>
           <p className="text-sm text-text-secondary">Review and act on pending leave requests.</p>
         </div>
-        <Button size="lg" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setAllocOpen(true)}>
+        <Button
+          size="lg"
+          leftIcon={<Plus className="h-4 w-4" />}
+          onClick={() => setAllocOpen(true)}
+        >
           Allocate Leave
         </Button>
       </div>
@@ -258,11 +262,7 @@ export default function LeaveApprovalsPage() {
         </div>
       )}
 
-      <AllocationModal
-        isOpen={allocOpen}
-        onClose={() => setAllocOpen(false)}
-        onAllocated={load}
-      />
+      <AllocationModal isOpen={allocOpen} onClose={() => setAllocOpen(false)} onAllocated={load} />
     </div>
   );
 }

@@ -22,8 +22,7 @@ import { api } from './api/client';
 import { authStore } from './auth/auth-store';
 import { ApiError } from './api/types';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || `http://localhost:8000${API_BASE}`;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || `http://localhost:8000${API_BASE}`;
 
 /** Nested `user` subset returned on every employee record (no `passwordHash`). */
 export interface EmployeeUser {
@@ -198,7 +197,7 @@ export async function listEmployees(params: ListEmployeesParams = {}): Promise<E
     data: json.data,
     meta: {
       nextCursor: (json.meta?.nextCursor as string | undefined) ?? null,
-      limit: (json.meta?.limit as number | undefined) ?? (params.limit ?? DEFAULT_LIMIT),
+      limit: (json.meta?.limit as number | undefined) ?? params.limit ?? DEFAULT_LIMIT,
     },
   };
 }

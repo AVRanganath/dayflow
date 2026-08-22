@@ -57,10 +57,7 @@ export function AdminAttendanceTable() {
   }, []);
 
   const filteredRows = useMemo(
-    () =>
-      selectedEmployeeId
-        ? rows.filter((r) => r.employeeId === selectedEmployeeId)
-        : rows,
+    () => (selectedEmployeeId ? rows.filter((r) => r.employeeId === selectedEmployeeId) : rows),
     [rows, selectedEmployeeId],
   );
 
@@ -138,9 +135,7 @@ export function AdminAttendanceTable() {
         columns={columns}
         data={filteredRows}
         isLoading={isLoading}
-        emptyState={
-          <p className="text-sm text-text-muted">No attendance records for this day.</p>
-        }
+        emptyState={<p className="text-sm text-text-muted">No attendance records for this day.</p>}
       />
     </div>
   );
