@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: 2026-08-22 · by: Chandan (S08)
+Last updated: 2026-08-22 · by: Ranganath (S13)
 
 ---
 
@@ -37,9 +37,9 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
 | S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
-| S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
-| S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
-| S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
+| S13 | Profile + directory | DONE | Pramith | feat/s13-profile-directory | S10, S05 | `/profile`, `/employees`, `/employees/:id` (view-only); `lib/employees.ts` fetchers (see detail) |
+| S14 | Attendance + leave pages | DONE | Mukunda | feat/s14-attendance-leave | S10, S06, S07 | `/attendance`, `/leaves`, `/leaves/approvals` pages; attendance/leaves api helpers; CSV export; NO SSE (S09 TODO) |
+| S15 | Payroll pages + reports | DONE | Mukunda | feat/s15-payroll-reports | S10, S08 | `/payroll` (employee read-only + admin surface), `lib/payroll.ts` fetchers, CSV export, live salary recompute |
 | S16 | Polish, tests, prod, demo | TODO | all four | — | all | Dockerfiles, tests, README, demo script |
 
 ### Assignment & order (who does what, and the gate to start)
@@ -61,6 +61,103 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
 
+### S14 — Attendance & Leave pages (DONE)
+- **Routes added** (under `apps/web/src/app/(protected)/` — the S10 route group is
+  `(protected)`, not the session file's aspirational `(app)`):
+  - `/attendance` (`attendance/page.tsx`) — check-in/out (green→red), status line,
+    hours-worked progress bar, Daily/Weekly/Monthly toggle, summary bar, and the
+    ADMIN/HR all-employees table with CSV export. Sub-components in
+    `attendance/_components/`: `attendance-calendar.tsx` (monthly grid, ADR-005 dots +
+    legend), `attendance-weekly.tsx` (Day|Date|In|Out|Hours|Status + totals),
+    `attendance-list.tsx` (ADR-019 day-wise: Date|Check In|Check Out|Work Hours|Extra
+    Hours|Break), `attendance-summary.tsx` (Present/Absent/Half-days/Leaves/Total Hours),
+    `admin-attendance-table.tsx` (employee selector + CSV), `attendance-status.ts`
+    (shared status→colour/label map + `formatTime`).
+  - `/leaves` (`leaves/page.tsx`) — balance cards (ADR-004: Paid teal, Sick amber,
+    Casual green, Unpaid ∞ gray), Apply button, history table.
+    `leaves/_components/`: `apply-leave-modal.tsx` (auto Total Days weekends-skipped,
+    Zod `ApplyLeaveSchema`, attachment upload ADR-018), `leave-history-table.tsx`
+    (expandable rows → reviewer comment, Status+Year filters, client pagination).
+  - `/leaves/approvals` (`leaves/approvals/page.tsx`) — **ADMIN/HR only**, employees
+    redirected to `/dashboard`; stats bar, filter/sort bar, request cards, Allocate
+    Leave (ADR-018). `approvals/_components/`: `leave-request-card.tsx` (avatar,
+    type badge, range+days, expandable reason, Approve green/Reject red with comment;
+    reject reason required via `RejectLeaveSchema`), `allocation-modal.tsx`
+    (`POST /leaves/allocations`), `empty-state.tsx` (wraps S10 EmptyState).
+- **API helpers (`apps/web/src/lib/api/`):**
+  - `attendance.ts` — `checkIn(location?)`, `checkOut(breakMinutes?)`,
+    `getMyAttendance(range='monthly', cursor?)`, `getAllAttendance(filters)` +
+    `MyAttendanceRow`/`AdminAttendanceRow`/`CheckInResult`/`CheckOutResult` types.
+  - `leaves.ts` — `applyLeave(fields)` (multipart when `file` present, else JSON with
+    optional `attachmentUrl`), `getMyLeaves`, `getAllLeaves(status?)`, `approveLeave`,
+    `rejectLeave`, `getMyBalance`, `allocateLeave`, `getEmployeeOptions`,
+    `getDepartments` + `MyLeaveRow`/`AdminLeaveRow`/`LeaveBalanceSummary` types.
+    **IMPORTANT for S12/S15: the leave API field is `leaveType` (not `type`),
+    `totalDays` is a Decimal serialised as a STRING, and the single reviewer field is
+    `reviewerComment` (there is no separate `rejectionReason`/`reviewNotes`). The admin
+    leave row's `employee` carries only `{ firstName, lastName }` — no department, so
+    department is mapped client-side via `GET /employees`.** Attendance `hoursWorked`/
+    `extraHours`/`breakMinutes` can be `null`.
+  - `raw.ts` — `getWithMeta<T>(path, params?)`: an envelope-aware GET returning
+    `{ data, meta }` (the S10 `api` client discards `meta`, losing the cursor). Reuse
+    for any paginated list. Handles Bearer + single-flight refresh like the client.
+- **Utils (`apps/web/src/lib/`):** `csv.ts` (`toCsv(rows, columns)` + `downloadCsv`),
+  `working-days.ts` (`countWorkingDays(start,end)` — UTC, inclusive, skips Sat/Sun,
+  mirrors S07's server rule; server count is authoritative on the response).
+- **SSE:** NOT wired — S09 is still `TODO`, so all pages reflect on refresh. When S09
+  lands, add `apps/web/src/lib/realtime.ts` (SSE over `GET /api/v1/events`) and have the
+  approvals + history/balance views subscribe (see S14 log for the seams).
+- **No `@dayflow/shared` schema changes.** Used existing `ApplyLeaveSchema`,
+  `RejectLeaveSchema`, `AllocateLeaveSchema` (field `type`, optional `year`), `API_ROUTES`.
+- **Role gates (ADR-001):** the Sidebar already role-filters nav (`/leaves` for
+  employees, `/leaves/approvals` for ADMIN/HR); `/leaves/approvals` also redirects
+  employees to `/dashboard` at the route, and the admin attendance table is hidden from
+  employees. API remains the final gate.
+### S13 — Profile & Employee Directory (DONE)
+- **Routes added** (all under `apps/web/src/app/(protected)/` — the real S10 route
+  group; the session file's `app/(app)/` path was aspirational):
+  - `/profile` — PAGE 5, role-agnostic. Loads `GET /employees/me`. Header (120px avatar
+    w/ camera upload, name, designation, department badge, Employee ID, "Edit Profile")
+    + board tabs (ADR-015): **Resume**, **Private Info**, **Job Details**, and
+    **Salary Info (ADMIN-only, ADR-013)**. Tab components in `profile/_components/`:
+    `resume-tab.tsx`, `private-info-tab.tsx`, `job-details-tab.tsx`, `salary-info-tab.tsx`,
+    `avatar-upload.tsx`, `profile-field.tsx` (shared `ReadonlyField` locked-box).
+  - `/employees` — PAGE 6, **ADMIN/HR only**. Top bar (title + live count, search,
+    Department/Employment-Type/Status filters, "Add Employee"), a **table ⇄ card-grid**
+    toggle, and cursor pagination. Components in `employees/_components/`:
+    `employee-table.tsx`, `employee-card.tsx` (ADR-017 work-status icon), `employee-filters.tsx`
+    (debounced search), `employee-pagination.tsx`.
+  - `/employees/:id` — **view-only** employee page (read-only reuse of the profile view;
+    no edit controls). ADMIN/HR only; opened by clicking a directory row or card.
+- **API helper `apps/web/src/lib/employees.ts`** (typed, no `any`): `getMe()`,
+  `updateMe(body)` (`PUT /employees/me`, shared `UpdateProfileSchema`), `getEmployee(id)`,
+  `uploadProfilePicture(id, file)` (reads the File → base64 **data URL** → `PATCH
+  /employees/:id/profile-picture` JSON `{ url }`; the stub schema `z.string().url()`
+  accepts data URLs and returns them verbatim, so the picture round-trips), `listEmployees(params)`
+  (**reads the raw envelope** to get `meta.nextCursor` — S10's `api.get` drops `meta`),
+  `listDepartments()`, plus the `Employee`/`Department`/`EmployeePage` response types
+  (declared here — `@dayflow/shared` only infers *input* types).
+- **Role-gate pattern:** the directory + view-only route redirect non-management users
+  (`role !== ADMIN|HR`) to `/dashboard` in a `useEffect` and render a spinner meanwhile;
+  the S10 sidebar already hides the nav item for employees; the API's `requireRole` +
+  row-level guard are the final gate. **Salary Info tab** is gated on `role === 'ADMIN'`.
+- **Work-status icon source:** the `workStatus` field (`PRESENT|ABSENT|ON_LEAVE`, ADR-017)
+  on each `/employees` row and on `/employees/me` → 🟢 / 🟡 / ✈️ on the directory card
+  (top-right) and the view-only header.
+- **Resume-tab fields:** **found** — `about/whatILove/hobbies/skills/certifications` are on
+  the `/employees/me` payload and self-editable via `PUT /employees/me` (verified end-to-end
+  against the seeded DB). `skills`/`certifications` are **string arrays** (comma-separated
+  in the UI), not the API.md doc's single string — the shared schema (`z.array(z.string())`)
+  is authoritative.
+- **No shared-schema changes.** One web-only build fix: `apps/web/next.config.mjs` gained a
+  webpack `resolve.extensionAlias` so `@dayflow/shared`'s NodeNext `.js` import specifiers
+  resolve to their `.ts` sources when webpack transpiles the package (S13 is the first web
+  code to import *runtime* values from the shared barrel, which surfaced this latent gap —
+  UI-only imports before never triggered it). Not a contract change.
+- **Note for S15 (payroll UI):** the Salary Info tab renders the ADR-013 read-only structure
+  with `—` placeholders because `/employees/me` carries **no** salary data — wire it to the
+  payroll module when that lands. Job Details shows the reporting manager as `managerId`
+  (an employee cannot read another employee's record to resolve a name; row-level guard).
 ### S11 — Auth Pages (DONE)
 - **Routes & Pages (`apps/web/src/app/(auth)/`):**
   - `(auth)/layout.tsx`: Split-screen public auth shell (left 50% brand panel with plum-to-dark-plum gradient, Montserrat Dayflow wordmark, Caveat Brush 52px marker headline with `#F0B93F` marker highlight behind "perfectly aligned.", 340px ring + 120px rotated square geometry, Caveat Brush 22px footnote; right panel hosting auth forms). Auto-redirects authenticated users to `/dashboard` (or `/change-password` if `mustChangePassword=true`).
@@ -424,6 +521,53 @@ Files under `apps/api/src/modules/attendance/` (layered route→controller→ser
 - **Formatters (`apps/web/src/lib/format.ts`):**
   - `formatINR(amount)` (e.g. ₹42,50,000), `formatHours(val, isMinutes?)`, `formatDate(date)`, `initials(name)`, `getAvatarColor(name)`.
 
+### S15 — Payroll pages + reports (DONE)
+- **Route:** `/payroll` at `apps/web/src/app/(protected)/payroll/page.tsx` (the app router
+  group is `(protected)`, not `(app)`). Renders for **all** roles: the employee sees a
+  read-only INR (ADR-008) payroll surface from `GET /payroll/me`; **ADMIN/HR** additionally
+  see the company payroll surface below it. Salary edit is **ADMIN-only** (ADR-001); HR sees
+  the table + CSV export but no edit action. Sidebar already links `/payroll` (S10).
+- **Components** (`apps/web/src/app/(protected)/payroll/_components/`):
+  `current-salary-card.tsx` (plum→dark hero, big Net in INR, Processed/Pending badge,
+  Download Payslip → blob), `salary-breakdown.tsx` (ADR-013/014 two-column: Basic, HRA,
+  Standard Allowance, Performance Bonus, LTA, Fixed Allowance → Gross; PF employee+employer,
+  Professional Tax → Total Deductions; payable-days box + highlighted Net bar),
+  `salary-history-table.tsx` (last-12-months, per-row payslip download),
+  `admin-payroll-table.tsx` (search + bulk table, CSV Export, Process-Payroll button
+  **disabled**), `edit-salary-modal.tsx` (**ADMIN-only** wage editor with live ADR-013
+  recompute, Fixed Allowance balancer).
+- **API helper (`apps/web/src/lib/payroll.ts`):** `getMyPayroll()`, `listPayroll(params)`,
+  `getEmployeePayroll(id)` (→ `GET /payroll/:id/salary-structure`),
+  `updateSalaryStructure(id, { wage })` (→ `PUT …/salary-structure`, sends both
+  `monthlyWage` and `wage`), `downloadPayslip(id, {month,year})` (returns a `Blob`, auth
+  header attached), `triggerBlobDownload(blob, name)`, `toCsv(rows, cols)` +
+  `downloadCsv(...)` (CSV util, differentiator #5 — S14 had none to reuse),
+  `computeSalary(wage, config?)` (pure ADR-013 recompute for the edit preview) +
+  `SALARY_DEFAULTS`, `formatPayMonth(ymd)`. Response types (`MyPayroll`, `SalaryStructure`,
+  `PayrollListRow`, `Payslip`, …) mirror `docs/API.md` §5.
+- **⚠️ Runtime blocked on S08.** S08 (payroll API) is **not merged**, so `GET /payroll/me`,
+  `GET /payroll`, the salary-structure GET/PUT and the payslip PDF do not exist yet. The UI
+  is wired to the documented contract via the typed api client and renders graceful
+  loading/empty/error states (no fake numbers shipped). Once S08 lands it should work
+  without UI changes, modulo the contract notes below.
+- **Contract notes for S08 to honor / reconcile:**
+  - Payslip download uses `GET /payroll/:id/payslip?month&year`; the UI passes `user.id`
+    (the auth principal is `User.id`) as `:id` — S08 must accept the caller's own id for
+    self-download, or expose the payroll-record id in `GET /payroll/me` history so the UI
+    can use that. If `payslipUrl` in the history is a real authenticated URL, that also works.
+  - `updateSalaryStructure` sends **both** `monthlyWage` (docs/API.md §5) and `wage`
+    (the `SalaryStructureSchema` field). S08 should accept `monthlyWage` per the docs; the
+    dual key is a hedge — pick one and align docs.
+  - **No process-payroll endpoint** exists in the S08 contract, so the "Process Payroll"
+    button is **disabled with a tooltip**. If S08 adds one, wire it in `admin-payroll-table.tsx`.
+- **Build gotcha (important for all frontend sessions):** `@dayflow/shared`'s barrel
+  re-exports use `.js` specifiers that **Next's webpack cannot resolve** against the `.ts`
+  sources. Importing any *value* (e.g. `API_ROUTES`, a Zod schema) from `@dayflow/shared`
+  into web code **breaks `next build`**. Type-only imports are fine (erased). S15 therefore
+  inlines the payroll route strings and validates the wage inline. **Fix for the monorepo
+  (S16?):** add `transpilePackages: ['@dayflow/shared']` to `next.config` or emit/point at
+  `dist`. Until then, keep web→shared imports type-only.
+
 ### S02 — Shared package `@dayflow/shared` (DONE)
 Import everything from `@dayflow/shared`. Every type is `z.infer` from its schema —
 never redefine. Files under `packages/shared/src/`:
@@ -496,6 +640,15 @@ never redefine. Files under `packages/shared/src/`:
   `npm run db:generate` (and `db:migrate`) as its first steps.
 - **`.md` files are Prettier-ignored** (`.prettierignore`) — hand-aligned tables.
   Prettier governs code only; don't reformat the docs.
+- **S14 (frontend infra, affects S11/S12/S13/S15):** `@dayflow/shared` exports its ESM
+  **source** (`./src/index.ts`) which uses explicit `.js` import specifiers that resolve
+  to `.ts` files. S10 only imported *types* from shared, so this never surfaced. The
+  moment you import a **runtime value** (a Zod schema, `API_ROUTES`, an enum array) from
+  `@dayflow/shared` in `apps/web`, `next build` fails with `Module not found: Can't
+  resolve './xxx.schema.js'`. Fix already applied in `apps/web/next.config.mjs` — a
+  webpack `resolve.extensionAlias` mapping `.js → [.ts,.tsx,.js,.jsx]`. Keep it; it
+  unblocks every frontend session that needs shared schemas/constants at runtime. (Dev
+  mode / tsx were already fine; only the webpack production build needed it.)
 - **S07:** the shared local Postgres had no migrations applied yet when this session
   started (`Company` table didn't exist) despite being reported healthy — ran
   `npm run db:deploy -w @dayflow/db` (`prisma migrate deploy`, safe/non-interactive)
