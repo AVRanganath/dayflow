@@ -1,0 +1,16 @@
+# Dependencies & build output
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+
+# Prisma generated client
+packages/db/prisma/generated/
+
+# Hand-authored Markdown docs & session specs (tables/prose are aligned by hand;
+# Prettier is for code, not prose). Formatting is intentional here.
+**/*.md
+
+# Lockfile
+package-lock.json

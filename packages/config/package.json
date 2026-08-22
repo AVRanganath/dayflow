@@ -1,0 +1,22 @@
+{
+  "name": "@dayflow/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript, ESLint, and Prettier configuration for the Dayflow monorepo.",
+  "type": "module",
+  "files": [
+    "tsconfig.base.json",
+    "eslint.base.mjs",
+    "prettier.config.mjs"
+  ],
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./eslint": "./eslint.base.mjs",
+    "./prettier": "./prettier.config.mjs"
+  },
+  "peerDependencies": {
+    "eslint": "^9",
+    "prettier": "^3",
+    "typescript": "^5"
+  }
+}

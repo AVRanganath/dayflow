@@ -24,7 +24,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 
 | # | Session | Status | Owner | Branch | Depends on | Interfaces produced (fill on DONE) |
 |---|---------|--------|-------|--------|-----------|------------------------------------|
-| S00 | Bootstrap & tooling | TODO | Chandan | — | — | root scripts, workspaces, docker-compose, `.env.example` |
+| S00 | Bootstrap & tooling | DONE | Chandan | feat/s00-bootstrap | — | npm workspaces + turbo, shared config, docker-compose, `.env.example` |
 | S01 | Database (Prisma) | TODO | Ranganath | — | S00 | migration name, seed cmd, demo creds |
 | S02 | Shared package | TODO | Chandan | — | S00 | exported Zod schemas + types + constants |
 | S03 | API core | TODO | Ranganath | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
@@ -69,7 +69,26 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 - Auth middleware STUBS exist at `apps/api/src/middleware/auth.ts` — S04 fills them in.
 -->
 
-_(empty — no sessions completed yet)_
+### S00 — Bootstrap & tooling (DONE)
+- **Monorepo:** npm workspaces (`apps/*`, `packages/*`) + Turborepo. Root
+  `packageManager: npm@11.17.0` (Turbo 2.10 requires it).
+- **Root scripts:** `npm run dev|build|lint|typecheck|format|format:check` and
+  `npm run db:generate|db:migrate|db:seed|db:studio` (proxy to `@dayflow/db`).
+- **Workspaces present:** `@dayflow/api`, `@dayflow/web`, `@dayflow/shared`,
+  `@dayflow/db`, `@dayflow/config`. Package names use `@dayflow/*`; internal deps use `*`.
+- **Shared config (`@dayflow/config`):** `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`),
+  `eslint.base.mjs` (flat config, typescript-eslint, `no-explicit-any: error`),
+  `prettier.config.mjs`. Root `eslint.config.mjs` / `prettier.config.mjs` re-export these.
+- **Skeletons:** `apps/api/src/index.ts`, `apps/web/src/index.ts`,
+  `packages/shared/src/index.ts`, `packages/db/src/index.ts` are placeholders that
+  compile — real code lands in S02/S03/S10 (each file names its session).
+- **Infra:** `docker compose up -d` starts `postgres:16-alpine` (db `dayflow`,
+  postgres/postgres, :5432) + `redis:7-alpine` (:6379), both with healthchecks.
+- **Env:** `.env.example`, `apps/api/.env.example`, `apps/web/.env.local.example`
+  (defaults match docker-compose). `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dayflow?schema=public`.
+- **Verified:** `npm install`, `npm run typecheck`, `npm run lint`, `npm run format:check`
+  all green. **`docker compose up -d` verified** — postgres + redis both report
+  `healthy`; `pg_isready` OK and `redis-cli ping` → PONG.
 
 ---
 
@@ -78,4 +97,14 @@ _(empty — no sessions completed yet)_
 > Put anything here that affects other agents: contract changes, schema changes,
 > discovered gotchas, decisions that need recording in `docs/DECISIONS.md`.
 
-_(none yet)_
+- **✅ Docker set up via Colima** (`colima start`, Docker CLI + compose plugin). `docker
+  compose up -d` verified: `dayflow-postgres` (:5432) and `dayflow-redis` (:6379) both
+  `healthy`. Teammates on their own machines: install Docker Desktop *or* Colima
+  (`brew install colima docker docker-compose && colima start`), then `docker compose
+  up -d`. On Colima, `docker compose` needs `cliPluginsExtraDirs` in `~/.docker/config.json`
+  (points to `/opt/homebrew/lib/docker/cli-plugins`).
+- **Prisma pinned to v6** (ADR-020). `npm install` in this hardened env skipped
+  postinstall scripts, so the Prisma client is **not generated yet** — S01 runs
+  `npm run db:generate` (and `db:migrate`) as its first steps.
+- **`.md` files are Prettier-ignored** (`.prettierignore`) — hand-aligned tables.
+  Prettier governs code only; don't reformat the docs.
