@@ -1,0 +1,20 @@
+{
+  "name": "@dayflow/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dayflow HRMS frontend — Next.js 14 + Tailwind.",
+  "scripts": {
+    "dev": "node -e \"console.info('[dayflow-web] scaffolded in session S10')\"",
+    "build": "node -e \"console.info('[dayflow-web] scaffolded in session S10')\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@dayflow/shared": "*"
+  },
+  "devDependencies": {
+    "@dayflow/config": "*",
+    "@types/node": "^22.5.4",
+    "typescript": "^5.6.2"
+  }
+}
