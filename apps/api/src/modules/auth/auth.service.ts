@@ -5,7 +5,7 @@
  * Express. All Prisma access lives in this file.
  */
 import { randomUUID } from 'node:crypto';
-import type { Prisma, User } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import type {
   ChangePasswordInput,
   ForgotPasswordInput,
@@ -40,6 +40,15 @@ export interface PublicUser {
   isEmailVerified: boolean;
 }
 
+type UserRecord = {
+  id: string;
+  email: string;
+  loginId: string;
+  role: Role;
+  mustChangePassword: boolean;
+  isEmailVerified: boolean;
+};
+
 /** A freshly issued token pair. */
 export interface TokenPair {
   accessToken: string;
@@ -47,7 +56,7 @@ export interface TokenPair {
 }
 
 /** Strips secret columns from a `User` before returning it. */
-function toPublicUser(user: User): PublicUser {
+function toPublicUser(user: UserRecord): PublicUser {
   return {
     id: user.id,
     email: user.email,
@@ -59,7 +68,7 @@ function toPublicUser(user: User): PublicUser {
 }
 
 /** Signs an access + refresh token pair for a user (with its linked employee id). */
-async function issueTokens(user: User): Promise<TokenPair> {
+async function issueTokens(user: UserRecord): Promise<TokenPair> {
   const employee = await prisma.employee.findUnique({
     where: { userId: user.id },
     select: { id: true },
@@ -109,7 +118,7 @@ export async function signup(input: SignupInput): Promise<{
     `${loginIdPrefix}${input.firstName.slice(0, 2).toUpperCase().padEnd(2, 'X')}` +
     `${input.lastName.slice(0, 2).toUpperCase().padEnd(2, 'X')}${year}0001`;
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const company = await tx.company.create({
       data: {
         name: input.companyName,
@@ -124,7 +133,7 @@ export async function signup(input: SignupInput): Promise<{
           performanceBonusPct: 8.33,
           ltaPct: 8.33,
           standardAllowance: 4167,
-        } satisfies Prisma.InputJsonValue,
+        },
       },
     });
 
