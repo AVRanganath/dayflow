@@ -26,7 +26,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 |---|---------|--------|-------|--------|-----------|------------------------------------|
 | S00 | Bootstrap & tooling | DONE | Chandan | feat/s00-bootstrap | — | npm workspaces + turbo, shared config, docker-compose, `.env.example` |
 | S01 | Database (Prisma) | DONE | Ranganath | feat/s01-database | S00 | Migration `init`, `db:seed`, demo creds, `@dayflow/db` export |
-| S02 | Shared package | TODO | Chandan | — | S00 | exported Zod schemas + types + constants |
+| S02 | Shared package | DONE | Chandan | feat/s02-shared | S00 | Zod schemas + `z.infer` types + enums/routes/envelope (see detail) |
 | S03 | API core | TODO | Ranganath | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
 | S04 | Auth module | TODO | Chandan | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
 | S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
@@ -74,6 +74,39 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 - `packages/db/prisma/seed.ts` provides a rich, idempotent demo dataset.
 - `packages/db/src/index.ts` exports `prisma` singleton and re-exports `@prisma/client` types.
 - Initial migration applied.
+
+### S02 — Shared package `@dayflow/shared` (DONE)
+Import everything from `@dayflow/shared`. Every type is `z.infer` from its schema —
+never redefine. Files under `packages/shared/src/`:
+- **`constants.ts`** — enum value arrays + `*Schema` (z.enum) + types for `Role`
+  (ADMIN/HR/EMPLOYEE), `LeaveType`, `AttendanceStatus`, `LeaveStatus`, `PayrollStatus`,
+  `Gender`, `MaritalStatus`, `EmploymentType`, `WorkStatus`. Plus `API_BASE` (`/api/v1`),
+  `API_ROUTES` (all paths; param routes are builder fns, e.g. `API_ROUTES.leaves.approve(id)`),
+  `DEFAULT_LIMIT=20`, `MAX_LIMIT=100`, `CURRENCY='INR'`.
+- **`envelope.ts`** — `SuccessResponse<T>`, `ErrorResponse`, `ApiResponse<T>`,
+  `ResponseMeta`, `ApiErrorBody` (types); `PaginationQuerySchema` (`cursor?`, coerced
+  `limit`).
+- **`auth.schema.ts`** — `SignupSchema` (ADR-012 onboarding: companyName/adminEmail/
+  password/firstName/lastName), `SigninSchema` (`{ identifier, password }` — email OR
+  loginId), `ChangePasswordSchema`, `RefreshSchema`, `ForgotPasswordSchema`,
+  `ResetPasswordSchema`.
+- **`employee.schema.ts`** — `UpdateProfileSchema` (strict self-editable subset),
+  `AdminUpdateEmployeeSchema` (full ADR-015 fields), `CreateEmployeeSchema` (ADR-012 —
+  no loginId/password; server-minted), `EmployeeListQuerySchema`.
+- **`attendance.schema.ts`** — `CheckInSchema`, `CheckOutSchema` (breakMinutes),
+  `AttendanceRangeSchema` (daily|weekly|monthly), `AttendanceListQuerySchema`.
+- **`leave.schema.ts`** — `ApplyLeaveSchema` (+ `attachmentUrl`, end≥start refine),
+  `RejectLeaveSchema`, `ApproveLeaveSchema`, `AllocateLeaveSchema` (ADR-018),
+  `LeaveListQuerySchema`.
+- **`payroll.schema.ts`** — `SalaryStructureSchema` (`{ wage, config? }`, ADR-013),
+  `SalaryConfigSchema`, `PayrollListQuerySchema`.
+- **`company.schema.ts`** — `UpdateCompanySchema`, `CompanySettingsSchema` (ADR-016).
+- Build emits `dist/` (JS + `.d.ts`). Consumers may import from `@dayflow/shared`
+  directly (exports resolve to `src` for tsx/next; `dist` for compiled output).
+- **NOTE for S01:** the shared `Role` enum includes `HR`, but the Prisma enum on
+  `main` still has only `ADMIN`/`EMPLOYEE`. **S01 must add `HR`** (ADR-001) so DB↔contract line up.
+- `generateLoginId`/`computeSalary` pure helpers were **not** placed here — left to
+  their owning modules (S05 auth/employee, S08 payroll) to keep shared dependency-free.
 
 ### S00 — Bootstrap & tooling (DONE)
 - **Monorepo:** npm workspaces (`apps/*`, `packages/*`) + Turborepo. Root

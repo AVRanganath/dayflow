@@ -16,7 +16,7 @@ Turn the minimal `apps/web` package (stubbed in S00) into a real Next.js 14 App
 Router app: the `docs/UI_DESIGN_PROMPT.md` **Global Design System** wired into
 Tailwind + `globals.css`, a typed API client that speaks the `docs/API.md`
 envelope and auto-refreshes tokens per ADR-007, an in-memory auth store with
-route protection, the shared app shell (dark indigo sidebar + header, responsive),
+route protection, the shared app shell (dark plum sidebar + header, responsive),
 and the 11 reusable UI primitives. **No feature pages** — those are S11–S15. This
 session builds the platform they all stand on.
 
@@ -40,18 +40,25 @@ session builds the platform they all stand on.
   script must run on **port 3000**.
 - **`apps/web/tailwind.config.ts`** — encode the Global Design System from
   `docs/UI_DESIGN_PROMPT.md` as theme tokens:
-  - colors: `primary` `#4F46E5`, `primary-hover` `#4338CA`, `success` `#10B981`,
-    `warning` `#F59E0B`, `danger` `#EF4444`, `background` `#F9FAFB`,
-    `card` `#FFFFFF`, `sidebar` `#1E1B4B`, `text-primary` `#111827`,
-    `text-secondary` `#6B7280`, `border` `#E5E7EB` (also expose the full
-    indigo/gray/emerald/amber/red scales).
-  - borderRadius: `card` `8px`, `btn` `6px`, `container` `12px`.
-  - boxShadow: `sm` (cards), `md` (modals/dropdowns) matching the spec.
-  - fontFamily: `sans` → Inter.
+  - colors: `primary` `#714B67`, `primary-hover` `#5B3C53`, `sidebar` `#2F1F2B`,
+    `primary-tint` `#F4EEF3`, `primary-tint-border` `#D6C4D1`,
+    `secondary` `#017E84`, `secondary-tint` `#E0F0F1`, `secondary-on-dark` `#8FC9CC`,
+    `accent` `#F0B93F`, `success` `#10B981`, `warning` `#F59E0B`, `danger` `#EF4444`,
+    `background` `#F5F6F7`, `card` `#FFFFFF`, `zebra` `#FAFAFB`, `border` `#DEE2E6`,
+    `hairline` `#EDEFF1`, `text-primary` `#383E45`, `text-secondary` `#6C757D`,
+    `text-muted` `#98A0A8`, `text-disabled` `#CED4DA`. Each semantic color also needs
+    its `-dark` and `-tint` step where the spec lists one (success/warning/danger),
+    plus the 8-color `avatar` palette as an array-ish scale.
+  - borderRadius: `sm` `3px`, `DEFAULT`/`card`/`btn` `4px`, `container` `6px`,
+    `pill` `99px`.
+  - boxShadow: `card` `0 1px 2px rgba(0,0,0,0.04)`, `hero` `0 4px 16px rgba(47,31,43,0.25)`,
+    `auth` `0 10px 40px rgba(47,31,43,0.12)`, `modal` `0 20px 60px rgba(0,0,0,0.25)`.
+  - fontFamily: `sans` → Roboto, `display` → Montserrat, `marker` → Caveat Brush.
 - **`apps/web/src/app/globals.css`** — Tailwind base/components/utilities, the
-  Inter font (loaded via `next/font/google` in `layout.tsx`, exposed as a CSS var
-  used here), body background `#F9FAFB`, text `#111827`, base focus-ring +
-  scrollbar polish.
+  three fonts (Roboto 300/400/500/700, Montserrat 600/700/800, Caveat Brush — all
+  via `next/font/google` in `layout.tsx`, exposed as CSS vars used here), body
+  background `#F5F6F7`, text `#383E45`, base focus ring
+  (`outline:2px solid #714B67; outline-offset:-1px`) + scrollbar polish.
 - **`apps/web/src/lib/api/client.ts`** — typed fetch wrapper:
   - base URL from `process.env.NEXT_PUBLIC_API_URL`.
   - attaches `Authorization: Bearer <accessToken>` from the auth store (in memory).
@@ -79,7 +86,7 @@ session builds the platform they all stand on.
     `RequireRole` helper for admin-only areas. Public routes (`/signin`,
     `/signup`) stay outside the guard.
 - **`apps/web/src/components/layout/`** — the shared app shell:
-  - `Sidebar.tsx` — dark indigo (`#1E1B4B`), 260px, Dayflow wordmark (white),
+  - `Sidebar.tsx` — dark plum (`#2F1F2B`), 260px, Dayflow wordmark (white, "flow" in `#8FC9CC`),
     Lucide nav items with active-state highlight, divider, Settings + Logout,
     user avatar + name + role badge at the bottom. Nav item set differs by role
     (employee vs admin per PAGE 3/4) — drive from a config array keyed by role.
@@ -107,7 +114,11 @@ session builds the platform they all stand on.
 
 ## Implementation notes
 - Follow `docs/UI_DESIGN_PROMPT.md` **precisely** for colors, radii, shadows, and
-  spacing (`p-6` card padding, `gap-6` grids). The style bar is Linear/Rippling.
+  spacing (20–24px card padding, 20–24px grid gaps, 32px page padding). The style bar
+  is Odoo-inspired: plum + teal on near-neutral grays, hairline borders, flat tints,
+  minimal motion. `UI/README.md` and the `UI/*.dc.html` prototypes are the built
+  reference — read the matching screen before building it, but do not port the inline
+  styles or `support.js`.
 - App Router only (no `pages/`). Server Components by default; mark interactive
   pieces (`AuthProvider`, forms, dropdowns, toasts) `'use client'`.
 - Icons: **Lucide** (`lucide-react`). Charts are **not** in this session (S12).
@@ -136,9 +147,10 @@ Run and confirm each:
       errors; the app shell (sidebar + header) renders.
 - [ ] Hitting a protected route (e.g. `/dashboard`) while unauthenticated
       **redirects to `/signin`**.
-- [ ] Design tokens render: spot-check a `<Button variant="primary">` (indigo
-      `#4F46E5`, radius 6px) and a `<StatsCard>` (card radius 8px, `shadow-sm`)
-      on a scratch/placeholder view.
+- [ ] Design tokens render: spot-check a `<Button variant="primary">` (plum
+      `#714B67`, radius 4px) and a `<StatsCard>` (card radius 4px, `shadow-card`)
+      on a scratch/placeholder view. Caveat Brush loads (greeting slot renders in
+      marker type, not a fallback serif).
 - [ ] The api client **compiles against `@dayflow/shared` types** and the
       `docs/API.md` envelope (typecheck proves it; no live api call required).
 - [ ] No feature pages, charts, or business endpoints were added (scope check).
@@ -161,8 +173,9 @@ This is a fresh chat with no prior memory — all context lives in committed fil
 
 1. Read in order: AGENTS.md, plan.md, build/SESSION_PROTOCOL.md, build/STATE.md,
    then build/sessions/S10-web-foundation.md (your full spec). Also read
-   docs/UI_DESIGN_PROMPT.md (Global Design System + Reusable Components), docs/API.md
-   (response envelope), and docs/DECISIONS.md (ADR-007 tokens, ADR-008 INR,
+   docs/UI_DESIGN_PROMPT.md (Global Design System + Reusable Components),
+   UI/README.md (the built design handoff — tokens, per-screen anatomy, state model),
+   docs/API.md (response envelope), and docs/DECISIONS.md (ADR-007 tokens, ADR-008 INR,
    ADR-010 envelope).
 2. Verify the preconditions (S02 DONE, @dayflow/shared exports the schemas/types,
    NEXT_PUBLIC_API_URL set). If anything blocks you, stop and tell me.
@@ -178,6 +191,7 @@ This is a fresh chat with no prior memory — all context lives in committed fil
 
 Stay strictly in scope — NO feature pages, NO charts, NO real business endpoints
 (a bare /dashboard placeholder proving the shell + guard is enough). Follow
-docs/UI_DESIGN_PROMPT.md precisely for colors/radii/shadows. When the spec is
+docs/UI_DESIGN_PROMPT.md precisely for colors/radii/shadows, and check the built
+prototypes in UI/ for anything the spec leaves ambiguous. When the spec is still
 ambiguous, follow docs/DECISIONS.md. Begin.
 ```

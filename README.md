@@ -79,7 +79,8 @@ in `build/sessions/`, and paste its **"▶ Copy-paste prompt"** into a fresh age
 | [`docs/API.md`](./docs/API.md) | REST API contract |
 | [`docs/DATABASE.md`](./docs/DATABASE.md) | Data model + ER diagram |
 | [`docs/DECISIONS.md`](./docs/DECISIONS.md) | Design decisions (authoritative tie-breaker) |
-| [`docs/UI_DESIGN_PROMPT.md`](./docs/UI_DESIGN_PROMPT.md) | Design system + page specs |
+| [`docs/UI_DESIGN_PROMPT.md`](./docs/UI_DESIGN_PROMPT.md) | Design system of record (tokens) + page specs |
+| [`UI/README.md`](./UI/README.md) | Built design handoff — per-screen anatomy, state model, open gaps |
 | [`docs/design-board.svg`](./docs/design-board.svg) | The team's detailed design board (source for ADR-012…019) |
 
 ## Repository layout
@@ -88,6 +89,7 @@ in `build/sessions/`, and paste its **"▶ Copy-paste prompt"** into a fresh age
 apps/        api (Express) · web (Next.js)
 packages/    db (Prisma) · shared (Zod + types) · config (tsconfig/eslint/prettier)
 docs/        architecture, api, database, decisions, ui spec
+UI/          hi-fi screen prototypes (.dc.html) + design handoff README
 build/       session protocol, state ledger, session specs, logs
 ```
 

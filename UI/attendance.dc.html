@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Montserrat:wght@600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;font-family:'Roboto',sans-serif;background:#F5F6F7} a{color:#714B67;text-decoration:none;font-weight:600} a:hover{color:#5B3C53}</style>
+</helmet>
+<div style="display:flex;align-items:stretch;min-height:100vh">
+<dc-import name="Sidebar" role="employee" active="Attendance" hint-size="260px,100vh"></dc-import>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="background:#FFFFFF;border-bottom:1px solid #DEE2E6;padding:16px 32px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:18px;font-weight:700;color:#383E45">Attendance</div>
+    <div style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:50%;background:#714B67;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">JD</div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C757D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+    </div>
+  </header>
+  <main style="padding:32px;display:flex;flex-direction:column;gap:24px">
+    <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;align-items:center;gap:32px">
+      <div style="flex:1">
+        <div style="font-size:13px;color:#6C757D">Today</div>
+        <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:22px;font-weight:700;color:#383E45;margin-top:2px">Saturday, Aug 22, 2026</div>
+        <div style="font-size:13px;color:#10B981;font-weight:600;margin-top:6px">✓ Checked in at 09:02 AM</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#6C757D"><span>Hours worked today</span><span style="font-weight:700;color:#383E45">4h 32m / 8h</span></div>
+        <div style="height:8px;background:#EDEFF1;border-radius:4px;overflow:hidden"><div style="height:100%;width:57%;background:#714B67;border-radius:4px"></div></div>
+      </div>
+      <button style="padding:14px 32px;background:#EF4444;color:#FFFFFF;border:none;border-radius:4px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif;flex-shrink:0" style-hover="background:#DC2626">Check Out</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:inline-flex;background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;padding:3px;gap:2px">
+        <sc-for list="{{ viewTabs }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:#383E45;display:flex;align-items:center;gap:12px">
+        <button style="width:28px;height:28px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;cursor:pointer;color:#6C757D">‹</button>
+        August 2026
+        <button style="width:28px;height:28px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;cursor:pointer;color:#6C757D">›</button>
+      </div>
+    </div>
+    <sc-if value="{{ isMonthly }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow:hidden">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #DEE2E6">
+          <sc-for list="{{ dayNames }}" as="d" hint-placeholder-count="7"><div style="padding:10px;text-align:center;font-size:11px;font-weight:600;color:#6C757D;text-transform:uppercase;letter-spacing:0.5px">{{ d }}</div></sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr)">
+          <sc-for list="{{ cells }}" as="c" hint-placeholder-count="35">
+            <div style="{{ c.cellStyle }}">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="{{ c.numStyle }}">{{ c.num }}</span><sc-if value="{{ c.dot }}" hint-placeholder-val="{{ false }}"><div style="{{ c.dotStyle }}"></div></sc-if></div>
+              <sc-if value="{{ c.times }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:#98A0A8;margin-top:auto">{{ c.times }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:20px;padding:14px 20px;border-top:1px solid #DEE2E6;font-size:12px;color:#6C757D">
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:50%;background:#10B981"></div>Present</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:50%;background:#EF4444"></div>Absent</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:50%;background:#F59E0B"></div>Half-day</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:50%;background:#714B67"></div>Leave</div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isWeekly }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr 1fr 1fr 1fr;padding:12px 24px;font-size:11px;font-weight:600;color:#6C757D;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #DEE2E6;background:#F5F6F7">
+          <div>Day</div><div>Date</div><div>Check In</div><div>Check Out</div><div>Hours</div><div>Status</div>
+        </div>
+        <sc-for list="{{ weekRows }}" as="w" hint-placeholder-count="7">
+          <div style="{{ w.rowStyle }}">
+            <div style="font-weight:600;color:#383E45">{{ w.day }}</div><div style="color:#6C757D">{{ w.date }}</div><div style="color:#383E45">{{ w.cin }}</div><div style="color:#383E45">{{ w.cout }}</div><div style="color:#383E45">{{ w.hours }}</div>
+            <div><span style="{{ w.badge }}">{{ w.status }}</span></div>
+          </div>
+        </sc-for>
+        <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr 1fr 1fr 1fr;padding:13px 24px;font-size:13px;font-weight:700;color:#383E45;background:#F5F6F7">
+          <div>Total</div><div></div><div></div><div></div><div>38h 15m</div><div></div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isDaily }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:15px;font-weight:600;color:#383E45">Today's Timeline</div>
+        <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="{{ t.dotStyle }}"></div>
+            <div style="font-size:13px;color:#383E45;flex:1">{{ t.text }}</div>
+            <div style="font-size:13px;color:#6C757D;font-weight:600">{{ t.time }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;padding:16px 24px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;align-items:center;font-size:13px">
+      <div style="flex:1;text-align:center"><span style="color:#6C757D">Present Days</span> <span style="font-weight:700;color:#10B981;margin-left:6px">20</span></div>
+      <div style="width:1px;height:24px;background:#DEE2E6"></div>
+      <div style="flex:1;text-align:center"><span style="color:#6C757D">Absent</span> <span style="font-weight:700;color:#EF4444;margin-left:6px">1</span></div>
+      <div style="width:1px;height:24px;background:#DEE2E6"></div>
+      <div style="flex:1;text-align:center"><span style="color:#6C757D">Half-days</span> <span style="font-weight:700;color:#F59E0B;margin-left:6px">1</span></div>
+      <div style="width:1px;height:24px;background:#DEE2E6"></div>
+      <div style="flex:1;text-align:center"><span style="color:#6C757D">Leaves</span> <span style="font-weight:700;color:#714B67;margin-left:6px">1</span></div>
+      <div style="width:1px;height:24px;background:#DEE2E6"></div>
+      <div style="flex:1;text-align:center"><span style="color:#6C757D">Total Hours</span> <span style="font-weight:700;color:#383E45;margin-left:6px">168h</span></div>
+    </div>
+  </main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'Monthly' };
+  renderVals() {
+    const view = this.state.view;
+    const viewTabs = ['Daily','Weekly','Monthly'].map(label => ({
+      label, select: () => this.setState({ view: label }),
+      style: 'padding:8px 18px;border:none;border-radius:5px;font-size:13px;cursor:pointer;font-family:Roboto,sans-serif;' +
+        (label === view ? 'background:#714B67;color:#FFFFFF;font-weight:600' : 'background:transparent;color:#6C757D;font-weight:500')
+    }));
+    const colors = { P:'#10B981', A:'#EF4444', H:'#F59E0B', L:'#714B67' };
+    // Aug 2026: Aug 1 = Saturday. Grid starts Sunday.
+    const statusByDay = { 3:'P',4:'P',5:'P',6:'P',7:'P', 10:'P',11:'A',12:'P',13:'P',14:'P', 17:'P',18:'P',19:'L',20:'P',21:'P', 24:'P',25:'P',26:'H',27:'P',28:'P', 31:'P' };
+    const timesByDay = { 21:'9:05–6:12', 20:'9:00–6:03', 19:'Paid leave', 26:'9:02–1:15' };
+    const cells = [];
+    for (let i = 0; i < 42; i++) {
+      const day = i - 5; // Aug 1 lands on col index 6 (Saturday)
+      const inMonth = day >= 1 && day <= 31;
+      const st = statusByDay[day];
+      const isToday = day === 22;
+      cells.push({
+        num: inMonth ? String(day) : '',
+        numStyle: 'font-size:12px;font-weight:600;' + (isToday ? 'background:#714B67;color:#FFFFFF;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center' : 'color:' + (inMonth ? '#383E45' : '#CED4DA')),
+        cellStyle: 'min-height:72px;padding:8px 10px;border-bottom:1px solid #EDEFF1;border-right:1px solid #EDEFF1;display:flex;flex-direction:column;box-sizing:border-box;' + (inMonth ? '' : 'background:#FAFAFB;'),
+        dot: !!st, dotStyle: st ? 'width:9px;height:9px;border-radius:50%;background:' + colors[st] : '',
+        times: timesByDay[day] || (isToday ? '9:02 – now' : '')
+      });
+    }
+    const badge = (bg, c) => 'font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;display:inline-block;background:' + bg + ';color:' + c;
+    const bd = { Present: badge('#D1FAE5','#065F46'), Absent: badge('#FEE2E2','#B91C1C'), 'Half-day': badge('#FEF3C7','#B45309'), Leave: badge('#E0F0F1','#017E84'), Weekend: badge('#EDEFF1','#6C757D') };
+    const row = 'display:grid;grid-template-columns:1fr 1.2fr 1fr 1fr 1fr 1fr;padding:12px 24px;font-size:13px;border-bottom:1px solid #EDEFF1;align-items:center';
+    const wk = (day,date,cin,cout,hours,status) => ({ day, date, cin, cout, hours, status, badge: bd[status], rowStyle: row });
+    const tdot = (c) => 'width:10px;height:10px;border-radius:50%;background:' + c + ';flex-shrink:0';
+    return {
+      viewTabs, isMonthly: view==='Monthly', isWeekly: view==='Weekly', isDaily: view==='Daily',
+      dayNames: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], cells,
+      weekRows: [
+        wk('Sunday','Aug 16','—','—','—','Weekend'),
+        wk('Monday','Aug 17','9:04 AM','6:10 PM','8h 06m','Present'),
+        wk('Tuesday','Aug 18','8:58 AM','6:22 PM','8h 24m','Present'),
+        wk('Wednesday','Aug 19','—','—','—','Leave'),
+        wk('Thursday','Aug 20','9:00 AM','6:03 PM','8h 03m','Present'),
+        wk('Friday','Aug 21','9:05 AM','6:12 PM','8h 07m','Present'),
+        wk('Saturday','Aug 22','9:02 AM','—','4h 32m','Present')
+      ],
+      timeline: [
+        { text: 'Checked in', time: '09:02 AM', dotStyle: tdot('#10B981') },
+        { text: 'Lunch break', time: '01:00 PM – 01:35 PM', dotStyle: tdot('#F59E0B') },
+        { text: 'Currently working — 4h 32m elapsed', time: 'now', dotStyle: tdot('#714B67') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

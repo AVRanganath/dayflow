@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Montserrat:wght@600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;font-family:'Roboto',sans-serif;background:linear-gradient(135deg,#F4EEF3,#FFFFFF)} a{color:#714B67;text-decoration:none;font-weight:600} a:hover{color:#5B3C53} input:focus,select:focus{outline:2px solid #714B67;outline-offset:-1px;border-color:#714B67}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;box-sizing:border-box">
+<div style="display:flex;width:1040px;max-width:100%;min-height:720px;background:#FFFFFF;border-radius:6px;box-shadow:0 10px 40px rgba(47,31,43,0.12);overflow:hidden">
+  <div style="flex:1;background:linear-gradient(160deg,#714B67,#2F1F2B);color:#FFFFFF;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden">
+    <div style="position:relative;z-index:1">
+      <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:26px;font-weight:800;letter-spacing:-0.5px">Day<span style="color:#8FC9CC">flow</span></div>
+      <div style="margin-top:52px;font-family:'Caveat Brush',cursive;font-size:52px;line-height:1.08;max-width:400px">Every workday, <span style="position:relative;display:inline-block"><span style="position:absolute;left:-6px;right:-6px;top:22%;bottom:12%;background:#F0B93F;border-radius:3px;z-index:-1"></span>perfectly aligned.</span></div>
+      <div style="margin-top:16px;font-size:15px;color:#D6C4D1;line-height:1.6;max-width:340px">Attendance, leave, and payroll for your whole team — in one calm place.</div>
+    </div>
+    <div style="position:absolute;right:-80px;bottom:-80px;width:340px;height:340px;border-radius:50%;border:60px solid rgba(255,255,255,0.07)"></div>
+    <div style="position:absolute;right:60px;bottom:120px;width:120px;height:120px;border-radius:24px;background:rgba(255,255,255,0.08);transform:rotate(18deg)"></div>
+    <div style="position:relative;z-index:1;font-family:'Caveat Brush',cursive;font-size:22px;color:#8FC9CC;transform:rotate(-3deg)">Trusted by 148 people at Dayflow</div>
+  </div>
+  <div style="flex:1;padding:48px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box">
+    <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:26px;font-weight:700;color:#383E45">Create your account</div>
+    <div style="font-size:14px;color:#6C757D;margin-top:6px">Start managing your workday efficiently</div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-top:28px">
+      <div style="display:flex;gap:16px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:13px;font-weight:600;color:#383E45">Employee ID</label>
+          <input type="text" placeholder="EMP001" style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif">
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:13px;font-weight:600;color:#383E45">Full Name</label>
+          <input type="text" placeholder="John Doe" style="padding:10px 12px;border:1px solid #10B981;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif" value="John Doe">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:13px;font-weight:600;color:#383E45">Work Email</label>
+        <input type="email" placeholder="you@company.com" value="john@company" style="padding:10px 12px;border:1px solid #EF4444;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif">
+        <div style="font-size:12px;color:#EF4444">Please enter a valid work email address.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:13px;font-weight:600;color:#383E45">Password</label>
+        <div style="position:relative;display:flex">
+          <input type="{{ pwType }}" placeholder="8+ characters" value="dayflow2026" style="flex:1;padding:10px 76px 10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif">
+          <button onClick="{{ togglePw }}" style="position:absolute;right:8px;top:7px;background:none;border:none;color:#6C757D;font-size:12px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif;padding:4px 6px">{{ pwToggleLabel }}</button>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          <div style="flex:1;height:4px;border-radius:2px;background:#10B981"></div>
+          <div style="flex:1;height:4px;border-radius:2px;background:#10B981"></div>
+          <div style="flex:1;height:4px;border-radius:2px;background:#10B981"></div>
+          <div style="flex:1;height:4px;border-radius:2px;background:#DEE2E6"></div>
+        </div>
+        <div style="font-size:12px;color:#10B981">Strong password</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:13px;font-weight:600;color:#383E45">Confirm Password</label>
+        <input type="password" value="dayflow2026" style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:13px;font-weight:600;color:#383E45">Role</label>
+        <select style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif;background:#FFFFFF;color:#383E45">
+          <option>Employee</option><option>HR / Admin</option>
+        </select>
+      </div>
+      <button style="margin-top:4px;padding:12px;background:#714B67;color:#FFFFFF;border:none;border-radius:4px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif" style-hover="background:#5B3C53">Create Account</button>
+      <div style="display:flex;align-items:center;gap:12px;color:#6C757D;font-size:12px"><div style="flex:1;height:1px;background:#DEE2E6"></div>or<div style="flex:1;height:1px;background:#DEE2E6"></div></div>
+      <div style="text-align:center;font-size:14px;color:#6C757D">Already have an account? <a href="./signin.dc.html">Sign in</a></div>
+      <div style="text-align:center;font-size:12px;color:#98A0A8;margin-top:8px">By signing up you agree to our <a href="#" style="color:#6C757D;font-weight:500;text-decoration:underline">Terms of Service</a></div>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { show: false };
+  renderVals() {
+    return {
+      pwType: this.state.show ? 'text' : 'password',
+      pwToggleLabel: this.state.show ? 'Hide' : 'Show',
+      togglePw: () => this.setState(s => ({ show: !s.show }))
+    };
+  }
+}
+</script>
+</body>
+</html>
