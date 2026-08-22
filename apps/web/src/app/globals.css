@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #f5f6f7;
+    --card: #ffffff;
+    --text-primary: #383e45;
+  }
+
+  body {
+    background-color: #f5f6f7;
+    color: #383e45;
+    font-family: var(--font-roboto), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Base focus ring for form controls per Global Design System */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid #714b67;
+    outline-offset: -1px;
+  }
+}
+
+/* Marker highlight accent — signature Dayflow styling */
+.marker-highlight {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+
+.marker-highlight::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 22%;
+  bottom: 12%;
+  background-color: #f0b93f;
+  border-radius: 3px;
+  z-index: -1;
+}
+
+/* Clean custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f6f7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d6c4d1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #714b67;
+}

@@ -1,10 +1,11 @@
 /**
  * Base router, mounted at `/api/v1` (`API_BASE`) by `app.ts`. Feature routers
  * (auth, employees, attendance, leaves, payroll, notifications, events) are
- * mounted here by S04–S09 — do not implement them in S03.
+ * mounted here by S04–S09.
  */
 import { Router } from 'express';
 import type { SuccessResponse } from '@dayflow/shared';
+import { authRouter } from '../modules/auth/auth.routes.js';
 import { attendanceRouter } from '../modules/attendance/attendance.route.js';
 
 export const router = Router();
@@ -14,7 +15,7 @@ router.get('/health', (_req, res) => {
   res.status(200).json(body);
 });
 
-// TODO(S04): router.use('/auth', authRouter)
+router.use('/auth', authRouter);
 // TODO(S05): router.use('/employees', employeesRouter); router.use('/departments', departmentsRouter); router.use('/company', companyRouter)
 router.use('/attendance', attendanceRouter); // S06
 // TODO(S07): router.use('/leaves', leavesRouter)
