@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Montserrat:wght@600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;font-family:'Roboto',sans-serif;background:#F5F6F7} a{color:#714B67;text-decoration:none;font-weight:600} a:hover{color:#5B3C53} input:focus,select:focus,textarea:focus{outline:2px solid #714B67;outline-offset:-1px}</style>
+</helmet>
+<div style="display:flex;align-items:stretch;min-height:100vh">
+<dc-import name="Sidebar" role="employee" active="My Profile" hint-size="260px,100vh"></dc-import>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="background:#FFFFFF;border-bottom:1px solid #DEE2E6;padding:16px 32px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:18px;font-weight:700;color:#383E45">My Profile</div>
+    <div style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:50%;background:#714B67;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">JD</div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C757D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+    </div>
+  </header>
+  <main style="padding:32px;display:flex;flex-direction:column;gap:24px">
+    <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:6px;padding:28px 32px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;align-items:center;gap:28px">
+      <div style="position:relative;flex-shrink:0">
+        <div style="width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#714B67,#8A5B7E);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:38px;font-weight:700">JD</div>
+        <button style="position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:#FFFFFF;border:1px solid #DEE2E6;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.12)" style-hover="background:#F5F6F7">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C757D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path></svg>
+        </button>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:22px;font-weight:700;color:#383E45">John Doe</div>
+        <div style="font-size:14px;color:#6C757D;margin-top:2px">Senior Software Engineer</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+          <span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:#E0F0F1;color:#017E84">Engineering</span>
+          <span style="font-size:12px;color:#6C757D;font-weight:500">Employee ID: EMP001</span>
+        </div>
+      </div>
+      <button style="padding:10px 18px;border:1px solid #714B67;color:#714B67;background:#FFFFFF;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif" style-hover="background:#F4EEF3">Edit Profile</button>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
+      <div style="display:flex;gap:4px;padding:0 24px;border-bottom:1px solid #DEE2E6">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ isPersonal }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:28px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+            <sc-for list="{{ personalFields }}" as="f" hint-placeholder-count="10">
+              <div style="{{ f.wrapStyle }};display:flex;flex-direction:column;gap:6px">
+                <label style="font-size:13px;font-weight:600;color:#383E45;display:flex;align-items:center;gap:6px">{{ f.label }}
+                  <sc-if value="{{ f.locked }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#98A0A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></sc-if>
+                </label>
+                <sc-if value="{{ f.textarea }}" hint-placeholder-val="{{ false }}"><textarea rows="2" style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif;resize:vertical">{{ f.value }}</textarea></sc-if>
+                <sc-if value="{{ f.input }}" hint-placeholder-val="{{ true }}"><input type="text" value="{{ f.value }}" style="{{ f.inputStyle }}"></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <button style="margin-top:24px;padding:11px 22px;background:#714B67;color:#FFFFFF;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif" style-hover="background:#5B3C53">Save Changes</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isJob }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 24px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <sc-for list="{{ jobFields }}" as="f" hint-placeholder-count="6">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="font-size:13px;font-weight:600;color:#383E45;display:flex;align-items:center;gap:6px">{{ f.label }}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#98A0A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></label>
+              <sc-if value="{{ f.badge }}" hint-placeholder-val="{{ false }}"><div><span style="font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:#D1FAE5;color:#065F46;display:inline-block">Full-time</span></div></sc-if>
+              <sc-if value="{{ f.plain }}" hint-placeholder-val="{{ true }}"><div style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;background:#F5F6F7;color:#6C757D">{{ f.value }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isSalary }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 24px">
+          <div style="font-size:13px;color:#6C757D;margin-bottom:16px">Monthly breakdown · Read-only</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div style="border:1px solid #DEE2E6;border-radius:4px;overflow:hidden">
+              <div style="padding:12px 16px;background:#F5F6F7;font-size:13px;font-weight:700;color:#383E45;border-bottom:1px solid #DEE2E6">Earnings</div>
+              <sc-for list="{{ earnings }}" as="e" hint-placeholder-count="5">
+                <div style="{{ e.rowStyle }}"><span>{{ e.name }}</span><span style="{{ e.amtStyle }}">{{ e.amount }}</span></div>
+              </sc-for>
+            </div>
+            <div style="border:1px solid #DEE2E6;border-radius:4px;overflow:hidden;align-self:start">
+              <div style="padding:12px 16px;background:#F5F6F7;font-size:13px;font-weight:700;color:#383E45;border-bottom:1px solid #DEE2E6">Deductions</div>
+              <sc-for list="{{ deductions }}" as="e" hint-placeholder-count="4">
+                <div style="{{ e.rowStyle }}"><span>{{ e.name }}</span><span style="{{ e.amtStyle }}">{{ e.amount }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin-top:20px;padding:16px 20px;background:#F4EEF3;border:1px solid #D6C4D1;border-radius:4px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px;font-weight:700;color:#2F1F2B">Net Salary</span>
+            <span style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:22px;font-weight:800;color:#714B67">₹62,450</span>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isDocs }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 24px;display:flex;flex-direction:column;gap:20px">
+          <div style="border:2px dashed #D6C4D1;border-radius:4px;padding:36px;display:flex;flex-direction:column;align-items:center;gap:8px;background:#FAF7F9;cursor:pointer" style-hover="background:#F4EEF3">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#714B67" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>
+            <div style="font-size:14px;font-weight:600;color:#383E45">Drag and drop files here</div>
+            <div style="font-size:12px;color:#6C757D">or <span style="color:#714B67;font-weight:600">browse</span> — PDF, DOC, PNG up to 10 MB</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ docs }}" as="d" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #DEE2E6;border-radius:4px">
+                <div style="{{ d.iconStyle }}">{{ d.ext }}</div>
+                <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#383E45">{{ d.name }}</div><div style="font-size:12px;color:#6C757D">{{ d.meta }}</div></div>
+                <button title="Download" style="width:30px;height:30px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;cursor:pointer;color:#6C757D;display:flex;align-items:center;justify-content:center" style-hover="background:#F5F6F7"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg></button>
+                <button title="Delete" style="width:30px;height:30px;border:1px solid #FECACA;background:#FEF2F2;border-radius:4px;cursor:pointer;color:#EF4444;display:flex;align-items:center;justify-content:center" style-hover="background:#FECACA"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: 'Personal Details' };
+  renderVals() {
+    const tab = this.state.tab;
+    const tabNames = ['Personal Details','Job Details','Salary Structure','Documents'];
+    const tabs = tabNames.map(label => ({
+      label,
+      select: () => this.setState({ tab: label }),
+      style: 'padding:14px 16px;background:none;border:none;font-size:14px;cursor:pointer;font-family:Roboto,sans-serif;border-bottom:2px solid ' +
+        (label === tab ? '#714B67;color:#714B67;font-weight:600' : 'transparent;color:#6C757D;font-weight:500')
+    }));
+    const inp = 'padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:Roboto,sans-serif';
+    const lockedInp = inp + ';background:#F5F6F7;color:#6C757D';
+    const pf = (label, value, opts) => Object.assign({ label, value, input: !(opts&&opts.textarea), textarea: !!(opts&&opts.textarea), locked: !!(opts&&opts.locked), wrapStyle: (opts&&opts.full) ? 'grid-column:1/-1' : '', inputStyle: (opts&&opts.locked) ? lockedInp : inp }, opts);
+    const rowS = 'display:flex;justify-content:space-between;padding:11px 16px;font-size:13px;color:#383E45;border-bottom:1px solid #EDEFF1';
+    const totS = 'display:flex;justify-content:space-between;padding:12px 16px;font-size:13px;font-weight:700;color:#383E45;background:#F5F6F7';
+    const money = (name, amount, total) => ({ name, amount, rowStyle: total ? totS : rowS, amtStyle: total ? 'font-weight:800' : 'font-weight:600' });
+    const docIcon = (bg, c) => 'width:38px;height:38px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background:' + bg + ';color:' + c;
+    return {
+      tabs,
+      isPersonal: tab === 'Personal Details', isJob: tab === 'Job Details', isSalary: tab === 'Salary Structure', isDocs: tab === 'Documents',
+      personalFields: [
+        pf('First Name','John'), pf('Last Name','Doe'),
+        pf('Email','john.doe@dayflow.com',{locked:true}), pf('Phone','+91 98765 43210'),
+        pf('Date of Birth','14 Mar 1992',{locked:true}), pf('Gender','Male'),
+        pf('Address','42, Indiranagar 2nd Stage, 100 Feet Road',{textarea:true, full:true}),
+        pf('City','Bengaluru'), pf('State','Karnataka'),
+        pf('Country','India'), pf('Zip Code','560038')
+      ],
+      jobFields: [
+        { label:'Employee ID', value:'EMP001', plain:true },
+        { label:'Department', value:'Engineering', plain:true },
+        { label:'Designation', value:'Senior Software Engineer', plain:true },
+        { label:'Date of Joining', value:'02 Jun 2022', plain:true },
+        { label:'Employment Type', badge:true },
+        { label:'Reporting Manager', value:'Sarah Mitchell (EMP012)', plain:true }
+      ],
+      earnings: [
+        money('Basic Salary','₹35,000'), money('HRA','₹14,000'), money('Conveyance','₹3,200'),
+        money('Medical','₹2,500'), money('Special Allowance','₹15,000'), money('Gross Salary','₹69,700', true)
+      ],
+      deductions: [
+        money('Provident Fund','₹4,200'), money('Professional Tax','₹200'),
+        money('Income Tax','₹2,850'), money('Total Deductions','₹7,250', true)
+      ],
+      docs: [
+        { name:'Offer Letter — John Doe.pdf', meta:'PDF · 240 KB · Uploaded 02 Jun 2022', ext:'PDF', iconStyle: docIcon('#FEE2E2','#B91C1C') },
+        { name:'PAN Card.png', meta:'IMG · 1.1 MB · Uploaded 05 Jun 2022', ext:'IMG', iconStyle: docIcon('#E0F0F1','#017E84') },
+        { name:'Degree Certificate.doc', meta:'DOC · 890 KB · Uploaded 05 Jun 2022', ext:'DOC', iconStyle: docIcon('#F2EBF0','#7B4A6E') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

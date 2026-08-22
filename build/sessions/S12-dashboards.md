@@ -94,7 +94,7 @@ and PAGE 4 of `docs/UI_DESIGN_PROMPT.md` exactly.
 ## Implementation notes
 - **Charting lib: Recharts** (add to `apps/web` deps). Wrap charts in
   `ResponsiveContainer`; use the palette from `docs/UI_DESIGN_PROMPT.md`
-  (present=`#10B981`, absent=`#EF4444`, half-day=`#F59E0B`, leave=`#4F46E5`/blue).
+  (present=`#10B981`, absent=`#EF4444`, half-day=`#F59E0B`, leave=`#714B67`/plum).
 - All money uses `formatINR` (ADR-008). All responses arrive **unwrapped** from the
   S10 client (envelope handled there, ADR-010) — code against `data` shapes only.
 - **Work-status indicator (ADR-017).** Render 🟢 present / 🟡 absent / ✈️ on leave from

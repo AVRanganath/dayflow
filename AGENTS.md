@@ -61,7 +61,9 @@ next `TODO` session, open its file in `build/sessions/`, and follow it.
 | `docs/API.md` | REST API contract (authoritative for endpoints). |
 | `docs/DATABASE.md` | Data model and ER diagram. |
 | `docs/DECISIONS.md` | Design decisions log (ADRs). Resolves any spec conflicts. |
-| `docs/UI_DESIGN_PROMPT.md` | Design system + page-by-page UI spec. |
+| `docs/UI_DESIGN_PROMPT.md` | Design system of record (tokens) + page-by-page UI spec. |
+| `UI/README.md` | Built design handoff: per-screen anatomy, state model, what's still undesigned. Wins over the UI spec on screen detail. |
+| `UI/*.dc.html` | Hi-fi screen prototypes — visual reference only, never ship or port them. |
 | `docs/design-board.svg` | The team's detailed design board (Excalidraw export). Captured authoritatively in `docs/DECISIONS.md` ADR-012…019. |
 | `docs/Dayflow.pdf` | Original problem statement. Board wins on conflicts. |
 | `apps/api/` | Express + TypeScript backend. |

@@ -46,15 +46,18 @@ screen before reaching `/dashboard`.
 ## Deliverables (exact files)
 - **`apps/web/src/app/(auth)/layout.tsx`** — public auth layout implementing the
   split screen from PAGE 1/2: left panel (50% desktop, hidden on mobile) with the
-  indigo-600 gradient, "Dayflow" wordmark, tagline "Every workday, perfectly
-  aligned.", and an abstract SVG/geometric pattern; right panel hosts the form.
+  `linear-gradient(160deg,#714B67,#2F1F2B)` brand gradient, "Dayflow" wordmark
+  ("flow" in `#8FC9CC`), the headline "Every workday, perfectly aligned." in
+  **Caveat Brush 52px** with the `#F0B93F` marker highlight behind "perfectly
+  aligned.", the decorative ring + rotated square, and the Caveat Brush footnote;
+  right panel hosts the form.
   This route group sits **outside** the S10 `RequireAuth` guard (public). If the
   user is already authenticated, redirect them to `/dashboard`.
 - **`apps/web/src/app/(auth)/signup/page.tsx`** — PAGE 1, **company/admin onboarding**
   (ADR-012: NO employee self-signup). "Set up your company" / "Create your admin
   account": fields **Company Name**, **Company Logo** (upload), and admin details
   **Full Name**, **Work Email**, **Password** (show/hide toggle + strength bar),
-  **Confirm Password**. Primary full-width indigo "Create Company & Admin" button;
+  **Confirm Password**. Primary full-width plum (`#714B67`) "Create Company & Admin" button;
   "Already have an account? Sign in" link; ToS footer link. Inline red error text +
   green-check on valid fields. **Shown only for first-run** (no admin yet): if the
   server reports onboarding is closed (`403 REGISTRATION_CLOSED`), show a message and

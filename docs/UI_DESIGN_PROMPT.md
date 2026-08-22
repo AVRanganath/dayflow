@@ -1,6 +1,13 @@
-# Dayflow HRMS — UI Design Prompt
+# Dayflow HRMS — UI Design Spec
 
-> Use this prompt (or individual page sections) with Claude Design, Google Stitch, Vercel v0, or any AI UI generator to produce all HTML/CSS mockups. Place output HTML files in the `UI/` folder.
+> **Status: designed.** These screens are built as high-fidelity prototypes in [`UI/`](../UI/).
+> This file is the **design system of record** — tokens, page inventory, and per-page intent.
+> For the built anatomy of a single screen (exact paddings, grid tracks, badge tints, state
+> model), read [`UI/README.md`](../UI/README.md); it is written from the delivered prototypes
+> and wins on any conflict.
+>
+> The prototypes are **references, not production code.** Recreate them in `apps/web` with the
+> project's own components, routing, and Tailwind tokens — do not ship the HTML.
 
 ---
 
@@ -8,25 +15,66 @@
 
 **App Name:** Dayflow
 **Tagline:** "Every workday, perfectly aligned."
-**Style:** Clean, modern SaaS dashboard. Think Linear, Notion, or Rippling.
-**Color Palette:**
-- Primary: `#4F46E5` (Indigo 600)
-- Primary Hover: `#4338CA` (Indigo 700)
-- Success: `#10B981` (Emerald 500)
-- Warning: `#F59E0B` (Amber 500)
-- Danger: `#EF4444` (Red 500)
-- Background: `#F9FAFB` (Gray 50)
-- Card Background: `#FFFFFF`
-- Sidebar Background: `#1E1B4B` (Indigo 950) — dark sidebar
-- Text Primary: `#111827` (Gray 900)
-- Text Secondary: `#6B7280` (Gray 500)
-- Border: `#E5E7EB` (Gray 200)
+**Style:** Odoo-inspired business software — plum and teal on near-neutral grays, dense but
+calm, with a hand-drawn marker accent that keeps it from reading as corporate. Hairline
+borders, flat tints, minimal motion. Only two gradients exist and both are deliberate: the
+auth brand panel and the payroll hero.
 
-**Typography:** Inter font family. Headings bold, body regular.
-**Border Radius:** `8px` for cards, `6px` for buttons/inputs, `12px` for large containers.
-**Shadows:** Subtle `shadow-sm` on cards, `shadow-md` on modals/dropdowns.
-**Icons:** Lucide icons (heroicons-style).
-**Framework:** Tailwind CSS classes. All pages should be responsive.
+**Color Palette**
+
+| Role | Token | Value |
+|---|---|---|
+| Primary (plum) | `primary` | `#714B67` |
+| Primary hover / deep | `primary-hover` | `#5B3C53` |
+| Sidebar / darkest plum | `sidebar` | `#2F1F2B` |
+| Primary tint / surface | `primary-tint` | `#F4EEF3` |
+| Primary tint border | `primary-tint-border` | `#D6C4D1` |
+| Secondary (teal) | `secondary` | `#017E84` |
+| Teal tint | `secondary-tint` | `#E0F0F1` |
+| Teal on dark | `secondary-on-dark` | `#8FC9CC` |
+| Accent marker | `accent` | `#F0B93F` |
+| Success | `success` | `#10B981` · dark `#065F46` · tint `#D1FAE5` · hover `#0DA271` |
+| Warning | `warning` | `#F59E0B` · dark `#B45309` · tint `#FEF3C7` |
+| Danger | `danger` | `#EF4444` · dark `#B91C1C` · tint `#FEE2E2` · soft `#FEF2F2` · border `#FECACA` |
+| Page background | `background` | `#F5F6F7` |
+| Card background | `card` | `#FFFFFF` |
+| Zebra row | `zebra` | `#FAFAFB` |
+| Border | `border` | `#DEE2E6` |
+| Hairline / track | `hairline` | `#EDEFF1` |
+| Text primary | `text-primary` | `#383E45` |
+| Text secondary | `text-secondary` | `#6C757D` |
+| Text muted | `text-muted` | `#98A0A8` |
+| Disabled text | `text-disabled` | `#CED4DA` |
+
+**Avatar palette** (rotate by index): `#714B67` `#10B981` `#F59E0B` `#8A5B7E` `#EF4444` `#0EA5E9` `#EC4899` `#14B8A6`
+
+**Typography** — three families, Google Fonts:
+- **Caveat Brush** — marker display only: hero headlines, dashboard greetings, the payroll hero label.
+- **Montserrat** 600/700/800 — titles, stat values, any bold text ≥15px; `letter-spacing:-0.2px`.
+- **Roboto** 300/400/500/700 — all other UI text.
+
+Scale (px): 52 hero · 46 index title · 38 hero amount · 34 · 26 stat/heading · 24 · 22 page
+value · 20 greeting · 18 page title · 15 card title · 14 body/controls · 13 table + labels ·
+12 meta · 11 badges/table headers · 10 micro.
+
+**Spacing** — 2 · 4 · 6 · 8 · 10 · 12 · 14 · 16 · 20 · 24 · 28 · 32 · 36 · 48 · 56 px.
+Page padding 32 · card padding 20–24 · grid gap 20–24 · header padding 16/32.
+
+**Border Radius** — `3px` marker highlight and small tracks · `4px` cards, buttons, inputs,
+tiles · `6px` large containers, modals, hero · `99px` pills · `50%` avatars.
+
+**Shadows** — card `0 1px 2px rgba(0,0,0,0.04)` · elevated/hero `0 4px 16px rgba(47,31,43,0.25)`
+· auth card `0 10px 40px rgba(47,31,43,0.12)` · modal `0 20px 60px rgba(0,0,0,0.25)` · index
+card hover `0 4px 12px rgba(47,31,43,0.1)`.
+
+**Focus** — `outline:2px solid #714B67; outline-offset:-1px` on every input, select, textarea.
+
+**Marker highlight** — the signature accent. An absolutely positioned span behind Caveat Brush
+text: `background:#F0B93F`, `border-radius:3px`, `z-index:-1`, inset `left:-6px right:-6px
+top:22% bottom:12%`. Used on the auth headline and the index title.
+
+**Icons:** Lucide (24×24 viewBox, `stroke-width:2`, round caps/joins).
+**Framework:** Tailwind CSS. All pages responsive.
 
 ---
 
@@ -34,30 +82,31 @@
 
 | # | Page | File Name | Route | Role |
 |---|------|-----------|-------|------|
-| 1 | Sign Up | `signup.html` | `/signup` | Public |
-| 2 | Sign In | `signin.html` | `/signin` | Public |
-| 3 | Employee Dashboard | `dashboard-employee.html` | `/dashboard` | Employee |
-| 4 | Admin Dashboard | `dashboard-admin.html` | `/dashboard` | Admin |
-| 5 | Employee Profile (View/Edit) | `profile.html` | `/profile` | Employee |
-| 6 | Employee Directory (Admin) | `employees.html` | `/employees` | Admin |
-| 7 | Attendance Page | `attendance.html` | `/attendance` | Both |
-| 8 | Leave Management | `leaves.html` | `/leaves` | Both |
-| 9 | Leave Approvals (Admin) | `leave-approvals.html` | `/leaves/approvals` | Admin |
-| 10 | Payroll / Salary | `payroll.html` | `/payroll` | Both |
+| 1 | Sign Up | `signup.dc.html` | `/signup` | Public |
+| 2 | Sign In | `signin.dc.html` | `/signin` | Public |
+| 3 | Employee Dashboard | `dashboard-employee.dc.html` | `/dashboard` | Employee |
+| 4 | Admin Dashboard | `dashboard-admin.dc.html` | `/dashboard` | Admin |
+| 5 | Employee Profile (View/Edit) | `profile.dc.html` | `/profile` | Employee |
+| 6 | Employee Directory (Admin) | `employees.dc.html` | `/employees` | Admin |
+| 7 | Attendance Page | `attendance.dc.html` | `/attendance` | Both |
+| 8 | Leave Management | `leaves.dc.html` | `/leaves` | Both |
+| 9 | Leave Approvals (Admin) | `leave-approvals.dc.html` | `/leaves/approvals` | Admin |
+| 10 | Payroll / Salary | `payroll.dc.html` | `/payroll` | Both |
 
 ---
 
 ## Page-by-Page Specifications
 
-### PAGE 1: Sign Up (`signup.html`)
+### PAGE 1: Sign Up (`signup.dc.html`)
 
-**Layout:** Centered card on a subtle gradient background (indigo-50 to white). Split layout — left side has branding/illustration, right side has the form.
+**Layout:** Centered card on `linear-gradient(135deg,#F4EEF3,#FFFFFF)`, 32px page padding. Card max-width 1040px, `border-radius:6px`, auth shadow, split into two equal columns — left brand panel, right form.
 
 **Left Side (50% width on desktop, hidden on mobile):**
-- Dayflow logo (text logo: "Dayflow" in bold indigo)
-- Tagline: "Every workday, perfectly aligned."
-- Abstract geometric illustration or a simple SVG pattern
-- Background: indigo-600 gradient
+- Wordmark "Dayflow" — Montserrat 800 26px white, "flow" in teal `#8FC9CC`
+- Headline "Every workday, perfectly aligned." — **Caveat Brush 52px**, with the marker highlight behind "perfectly aligned."
+- Decorative shapes: a 340px ring (`border:60px solid rgba(255,255,255,0.07)`) bottom-right, and a 120px rounded square rotated 18°
+- Footnote "Trusted by 148 people at Dayflow" — Caveat Brush 22px `#8FC9CC`, rotated -3°
+- Background: `linear-gradient(160deg,#714B67,#2F1F2B)`
 
 **Right Side — Sign Up Form:**
 - Heading: "Create your account"
@@ -69,16 +118,16 @@
   - Password (password input with show/hide toggle, strength indicator bar below)
   - Confirm Password
   - Role (dropdown/select: "Employee" or "HR / Admin")
-- Primary button: "Create Account" (full width, indigo)
+- Primary button: "Create Account" (full width, plum `#714B67`, hover `#5B3C53`)
 - Divider: "or"
 - Link: "Already have an account? Sign in"
 - Footer: Terms of service link
 
-**Validation States:** Show inline error text in red below each field. Green checkmark for valid fields.
+**Validation States:** Valid field → border `#10B981`. Invalid → border `#EF4444` + 12px `#EF4444` helper text. Password strength meter: four 4px bars, filled `#10B981`, unfilled `#DEE2E6`.
 
 ---
 
-### PAGE 2: Sign In (`signin.html`)
+### PAGE 2: Sign In (`signin.dc.html`)
 
 **Layout:** Same split layout as Sign Up.
 
@@ -96,14 +145,14 @@
 
 ---
 
-### PAGE 3: Employee Dashboard (`dashboard-employee.html`)
+### PAGE 3: Employee Dashboard (`dashboard-employee.dc.html`)
 
 **Layout:** Sidebar + Main content area.
 
-**Sidebar (dark indigo, 260px wide, collapsible):**
+**Sidebar (dark plum `#2F1F2B`, 260px wide, collapsible):**
 - Top: Dayflow logo (white text)
 - Navigation items (with Lucide icons):
-  - 📊 Dashboard (active state — indigo background highlight)
+  - 📊 Dashboard (active state — plum `#714B67` background, white, 600 weight)
   - 👤 My Profile
   - 📅 Attendance
   - 🏖️ Leave Requests
@@ -114,7 +163,7 @@
 - Bottom: User avatar circle + name + role badge ("Employee")
 
 **Top Header Bar:**
-- Left: "Dashboard" page title + greeting "Good morning, John! 👋"
+- Left: "Dashboard" page title (Montserrat 700 18px) + greeting "Good morning, John!" in **Caveat Brush 20px `#714B67`**
 - Right: Notification bell icon (with red dot badge), user avatar dropdown
 
 **Main Content — 4 Quick-Access Cards (2x2 grid):**
@@ -141,7 +190,7 @@
 
 4. **This Week's Summary** card:
    - Mon–Fri mini calendar/grid:
-     - Green dot = Present, Red dot = Absent, Yellow = Half-day, Blue = Leave
+     - Green `#10B981` = Present, Red `#EF4444` = Absent, Amber `#F59E0B` = Half-day, Plum `#714B67` = Leave
    - Total hours: "38h 15m"
    - Attendance rate: "96%"
 
@@ -150,7 +199,7 @@
 
 ---
 
-### PAGE 4: Admin Dashboard (`dashboard-admin.html`)
+### PAGE 4: Admin Dashboard (`dashboard-admin.dc.html`)
 
 **Layout:** Same sidebar layout but with admin navigation items:
 - 📊 Dashboard
@@ -170,10 +219,10 @@
 **Main Content:**
 
 **Row 1 — Stats Cards (4 across):**
-1. Total Employees: "148" with up arrow "+3 this month" (blue icon)
-2. Present Today: "132" with percentage "89%" (green icon)
-3. Pending Leave Requests: "7" (orange icon, clickable)
-4. Total Payroll This Month: "₹42,50,000" (purple icon)
+1. Total Employees: "148" with up arrow "+3 this month" (teal tile `#E0F0F1`/`#017E84`)
+2. Present Today: "132" with percentage "89%" (green tile `#D1FAE5`/`#059669`)
+3. Pending Leave Requests: "7" (amber tile `#FEF3C7`/`#B45309`, clickable)
+4. Total Payroll This Month: "₹42,50,000" (plum tile `#F2EBF0`/`#8A5B7E`)
 
 **Row 2 — Two columns:**
 
@@ -182,7 +231,7 @@ Left Column (60%):
   - Columns: Employee Name | Leave Type | Dates | Status | Actions
   - 5 rows with:
     - Name + avatar thumbnail
-    - Leave type badge (Paid=blue, Sick=orange, Unpaid=gray)
+    - Leave type badge (Paid `#E0F0F1`/`#017E84`, Sick `#FEF3C7`/`#B45309`, Casual `#D1FAE5`/`#065F46`, Unpaid `#EDEFF1`/`#6C757D`)
     - Date range
     - Status badge (Pending=yellow, Approved=green, Rejected=red)
     - Approve/Reject icon buttons (for pending ones)
@@ -193,7 +242,7 @@ Right Column (40%):
   - Present: 89% (green)
   - Absent: 5% (red)
   - Half-day: 3% (yellow)
-  - On Leave: 3% (blue)
+  - On Leave: 3% (plum `#714B67`)
   - "Today, Aug 22, 2026" subtitle
 
 **Row 3:**
@@ -206,7 +255,7 @@ Right Column (40%):
 
 ---
 
-### PAGE 5: Employee Profile (`profile.html`)
+### PAGE 5: Employee Profile (`profile.dc.html`)
 
 **Layout:** Sidebar + Main content.
 
@@ -254,7 +303,7 @@ Right Column (40%):
 
 ---
 
-### PAGE 6: Employee Directory — Admin (`employees.html`)
+### PAGE 6: Employee Directory — Admin (`employees.dc.html`)
 
 **Layout:** Sidebar + Main content.
 
@@ -278,7 +327,7 @@ Right Column (40%):
 
 ---
 
-### PAGE 7: Attendance (`attendance.html`)
+### PAGE 7: Attendance (`attendance.dc.html`)
 
 **Layout:** Sidebar + Main content.
 
@@ -296,7 +345,7 @@ Right Column (40%):
 - Calendar grid for current month
 - Each day cell shows:
   - Day number
-  - Color-coded status dot (Green=Present, Red=Absent, Yellow=Half-day, Blue=Leave)
+  - Color-coded status dot (Present `#10B981`, Absent `#EF4444`, Half-day `#F59E0B`, Leave `#714B67`)
   - Check-in/out times in small text
 - Legend at bottom: Present / Absent / Half-day / Leave
 
@@ -316,14 +365,14 @@ Right Column (40%):
 
 ---
 
-### PAGE 8: Leave Management (`leaves.html`)
+### PAGE 8: Leave Management (`leaves.dc.html`)
 
 **Layout:** Sidebar + Main content.
 
 **Top Section — Leave Balance Cards (horizontal row):**
-- Paid Leave: 8/12 (progress bar, blue)
-- Sick Leave: 3/5 (progress bar, orange)
-- Casual Leave: 2/3 (progress bar, green)
+- Paid Leave: 8/12 (progress bar, plum `#714B67`)
+- Sick Leave: 3/5 (progress bar, amber `#F59E0B`)
+- Casual Leave: 2/3 (progress bar, green `#10B981`)
 - Unpaid Leave: "Unlimited" (gray)
 
 **"Apply for Leave" Button** → Opens a modal/slide-over panel:
@@ -344,7 +393,7 @@ Right Column (40%):
 
 ---
 
-### PAGE 9: Leave Approvals — Admin (`leave-approvals.html`)
+### PAGE 9: Leave Approvals — Admin (`leave-approvals.dc.html`)
 
 **Layout:** Sidebar + Main content.
 
@@ -370,7 +419,7 @@ Each card shows:
 
 ---
 
-### PAGE 10: Payroll / Salary (`payroll.html`)
+### PAGE 10: Payroll / Salary (`payroll.dc.html`)
 
 **Layout:** Sidebar + Main content.
 
@@ -428,7 +477,7 @@ Right — Deductions:
 
 ## Reusable Components Needed
 
-1. **Sidebar** — Dark indigo, navigation items, user info at bottom
+1. **Sidebar** — Dark plum `#2F1F2B`, navigation items, user info at bottom
 2. **Header Bar** — Page title, notifications, user avatar dropdown
 3. **Stats Card** — Icon, number, label, trend indicator
 4. **Data Table** — Sortable, paginated, with row actions
@@ -445,11 +494,11 @@ Right — Deductions:
 
 ## Design Generation Tips
 
-- Generate each page as a separate HTML file
-- Use Tailwind CSS via CDN for styling
-- Include sample/dummy data in the HTML
+- The prototypes already exist in `UI/` as `.dc.html` — read them before rebuilding a screen
+- Recreate in `apps/web` with the project's Tailwind tokens; do not port the inline styles or `support.js`
+- Sample data in the prototypes is dummy — replace with real bindings
 - Make interactive elements look clickable (hover states)
-- Use consistent spacing (p-6 for card padding, gap-6 for grids)
-- Dark sidebar should contrast with light main content area
+- Use consistent spacing (20–24px card padding, 20–24px grid gaps, 32px page padding)
+- Dark plum sidebar contrasts with the `#F5F6F7` main content area
 - Tables should have zebra striping (alternate row colors)
 - All forms should show both normal and error states
