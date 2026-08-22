@@ -70,18 +70,19 @@ Rate limit information is included in the following response headers:
     lastName: string // z.string().min(2)
   }
   ```
-- **Success Response (201 Created):**
+- **Success Response (201 Created):** `accessToken` is returned in the body; the
+  refresh token is set as an HttpOnly `dayflow_rt` cookie (ADR-007), **not** in the body.
   ```json
   {
     "success": true,
     "data": {
       "company": { "id": "uuid", "name": "Odoo India", "loginIdPrefix": "OI" },
-      "user": { "id": "uuid", "email": "admin@dayflow.com", "role": "ADMIN", "loginId": "OIADMI20260001" },
-      "accessToken": "ey...",
-      "refreshToken": "ey..."
+      "user": { "id": "uuid", "email": "admin@dayflow.com", "role": "ADMIN", "loginId": "OISUAD20260001", "mustChangePassword": false },
+      "accessToken": "ey..."
     }
   }
   ```
+  > Sets `Set-Cookie: dayflow_rt=<refresh JWT>; HttpOnly; SameSite=Strict; Path=/api/v1/auth` (Secure in production).
 - **Error Response (403 Forbidden):**
   ```json
   {
@@ -101,14 +102,15 @@ Rate limit information is included in the following response headers:
     password: string // z.string()
   }
   ```
-- **Success Response (200 OK):**
+- **Success Response (200 OK):** `accessToken` in the body; the refresh token is set
+  as the HttpOnly `dayflow_rt` cookie (ADR-007), not in the body. `mustChangePassword`
+  is included so the client can force a first-login password change.
   ```json
   {
     "success": true,
     "data": {
       "user": { "id": "uuid", "email": "employee@dayflow.com", "loginId": "OIJODO20220001", "role": "EMPLOYEE", "mustChangePassword": true },
-      "accessToken": "ey...",
-      "refreshToken": "ey..."
+      "accessToken": "ey..."
     }
   }
   ```
@@ -141,32 +143,28 @@ Rate limit information is included in the following response headers:
 
 ### Refresh Token
 - **Method & Path:** `POST /api/v1/auth/refresh`
-- **Description:** Get a new access token using a refresh token.
-- **Auth Required:** None
-- **Request Body:**
-  ```typescript
-  {
-    refreshToken: string // z.string()
-  }
-  ```
-- **Success Response (200 OK):**
+- **Description:** Get a new access token by rotating the refresh token. The refresh
+  token is read from the HttpOnly `dayflow_rt` cookie (ADR-007) — **no request body**.
+  The presented token is rotated (the old one is blacklisted) and a new `dayflow_rt`
+  cookie is set.
+- **Auth Required:** None (a valid, non-blacklisted refresh cookie is required)
+- **Request Body:** None (cookie-based).
+- **Success Response (200 OK):** `accessToken` in the body; a fresh `dayflow_rt` cookie
+  is set via `Set-Cookie`.
   ```json
   {
     "success": true,
-    "data": { "accessToken": "ey...", "refreshToken": "ey..." }
+    "data": { "accessToken": "ey..." }
   }
   ```
 
 ### Logout
 - **Method & Path:** `POST /api/v1/auth/logout`
-- **Description:** Invalidate the current refresh token.
-- **Auth Required:** Any authenticated role
-- **Request Body:**
-  ```typescript
-  {
-    refreshToken: string // z.string()
-  }
-  ```
+- **Description:** Clears the `dayflow_rt` cookie and blacklists the refresh token in
+  Redis until its natural expiry (ADR-007). The refresh token is read from the cookie —
+  **no request body**.
+- **Auth Required:** None (cookie-based).
+- **Request Body:** None (cookie-based).
 - **Success Response (200 OK):**
   ```json
   {

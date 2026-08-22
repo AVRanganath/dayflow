@@ -28,7 +28,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S01 | Database (Prisma) | DONE | Ranganath | feat/s01-database | S00 | Migration `init`, `db:seed`, demo creds, `@dayflow/db` export |
 | S02 | Shared package | DONE | Chandan | feat/s02-shared | S00 | Zod schemas + `z.infer` types + enums/routes/envelope (see detail) |
 | S03 | API core | DONE | Mukunda | feat/s03-api-core | S01, S02 | app bootstrap, middleware, `AppError`, `/health` (see detail) |
-| S04 | Auth module | TODO | Chandan | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
+| S04 | Auth module | DONE | Pramith | feat/s04-auth | S03 | auth endpoints, `requireAuth`/`requireRole`, JWT+bcrypt, refresh cookie (see detail) |
 | S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
 | S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
 | S07 | Leave module | TODO | Ranganath | — | S03 | leave endpoints, balance logic, allocations |
@@ -60,6 +60,45 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
+
+### S04 — Auth (DONE)
+- **Endpoints** (all under `/api/v1/auth`, tighter rate limit 10 req/60s per IP):
+  `POST /signup` (company/admin onboarding, ADR-012 — 201, gated on `count(ADMIN)===0`
+  else `403 REGISTRATION_CLOSED`; creates Company + first ADMIN User + Employee in one
+  `$transaction`; returns `{ company, user, accessToken }`), `POST /signin`
+  (`{ identifier, password }`, email OR loginId; `401 INVALID_CREDENTIALS`; returns
+  `{ user, accessToken }` incl. `mustChangePassword`), `POST /refresh` (cookie-based,
+  rotates + blacklists old, returns `{ accessToken }`), `POST /logout` (clears cookie +
+  blacklists), `POST /change-password` (requireAuth; clears `mustChangePassword`),
+  `GET /verify-email/:token`, `POST /forgot-password` (no enumeration, logs link),
+  `POST /reset-password`.
+- **Guards** (import from `apps/api/src/middleware/auth.ts`, relative `../../middleware/auth.js`):
+  `requireAuth(req,res,next)` — reads `Authorization: Bearer <token>`, verifies the
+  access JWT, sets `req.user`, else throws `UnauthorizedError` (401). `requireRole(...roles: Role[])`
+  → returns middleware; throws `ForbiddenError` (403) if `req.user.role` ∉ roles (run
+  after `requireAuth`). ADMIN+HR are management (ADR-001), e.g. `requireRole('ADMIN','HR')`.
+- **`req.user` shape:** `AuthUser { id: string; role: Role }` (the S03 stub type, kept
+  as-is). `employeeId` is NOT on `req.user`; it rides inside the access-token payload —
+  S05+ that need it should decode/verify the token or look up `Employee` by `userId`.
+- **Tokens (ADR-007):** access JWT 15m (`JWT_ACCESS_SECRET`/`_EXPIRY`), payload
+  `{ sub: userId, employeeId: string|null, role }`, returned in JSON body. Refresh JWT
+  7d (`JWT_REFRESH_SECRET`/`_EXPIRY`), payload `{ sub, role, jti }`, delivered as the
+  **HttpOnly** cookie `dayflow_rt` (`SameSite=Strict`, `Secure` in prod, `Path=/api/v1/auth`,
+  `maxAge` 7d). Helpers in `apps/api/src/lib/jwt.ts`: `signAccessToken`, `signRefreshToken`,
+  `verifyAccess`, `verifyRefresh`.
+- **Password helpers** `apps/api/src/lib/password.ts`: `hashPassword`, `comparePassword`
+  (bcryptjs, cost 10).
+- **Blacklist:** on logout/refresh-rotation, the refresh token's `jti` is stored in Redis
+  key `auth:blacklist:<jti>` with TTL = remaining lifetime; `refresh` rejects blacklisted
+  jtis (`401`). Fails open if Redis is down.
+- **New building blocks added (S03 STATE listed these as existing but they were absent):**
+  `apps/api/src/lib/response.ts` → `sendSuccess(res, data, status?, meta?)` (ADR-010
+  envelope); `apps/api/src/middleware/validate.ts` → `validate(schema)` (parses `req.body`,
+  forwards ZodError → 400 `VALIDATION_ERROR`). S05+ should reuse these.
+- **App wiring:** `cookie-parser` added to `app.ts`; `router.use('/auth', authRouter)` in
+  `routes/index.ts`. New deps in `apps/api`: `bcryptjs`, `jsonwebtoken`, `cookie-parser`
+  (+ `@types/*`).
+- Unblocks S11 (auth pages) and lets S05–S08 guard routes with `requireAuth`/`requireRole`.
 
 ### S03 — API core (DONE)
 - **Boot:** `apps/api/src/server.ts` is the process entry (`npm run dev -w apps/api`,
