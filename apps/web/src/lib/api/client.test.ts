@@ -9,6 +9,8 @@ vi.mock('../auth/auth-store', () => ({
     getAccessToken: vi.fn(),
     getUser: vi.fn(),
     setSession: vi.fn(),
+    setToken: vi.fn(),
+    setUser: vi.fn(),
     clearSession: vi.fn(),
   },
 }));
@@ -116,8 +118,10 @@ describe('API Client', () => {
     expect(mockFetch.mock.calls[2]![0]).toContain('/protected');
     expect(mockFetch.mock.calls[2]![1].headers.get('Authorization')).toBe('Bearer new-token');
 
-    // Make sure authStore was updated
-    expect(authStore.setSession).toHaveBeenCalledWith('new-token', { id: '1', role: 'EMPLOYEE' });
+    // Make sure authStore was updated: the token is always persisted, and the
+    // user is set when the refresh response includes one.
+    expect(authStore.setToken).toHaveBeenCalledWith('new-token');
+    expect(authStore.setUser).toHaveBeenCalledWith({ id: '1', role: 'EMPLOYEE' });
   });
 
   it('clears session and redirects if refresh fails on 401', async () => {

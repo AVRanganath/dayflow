@@ -3,11 +3,8 @@ import {
   Role,
   Gender,
   EmploymentType,
-  AttendanceStatus,
-  LeaveType,
-  LeaveStatus,
-  PayrollStatus,
   MaritalStatus,
+  LeaveType,
 } from '@prisma/client';
 import type { Department, Employee } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -26,70 +23,6 @@ function randomInt(min: number, max: number) {
 function randomElement<T>(arr: T[]): T {
   return arr[randomInt(0, arr.length - 1)];
 }
-function randomBoolean(chance: number = 0.5) {
-  return random() < chance;
-}
-
-const firstNames = [
-  'Alice',
-  'Bob',
-  'Charlie',
-  'Diana',
-  'Eve',
-  'Frank',
-  'Grace',
-  'Heidi',
-  'Ivan',
-  'Judy',
-  'Mallory',
-  'Nina',
-  'Oscar',
-  'Peggy',
-  'Romeo',
-  'Sybil',
-  'Trent',
-  'Victor',
-  'Walter',
-  'Alice',
-  'Bruce',
-  'Clark',
-  'Diana',
-  'Barry',
-  'Hal',
-  'Arthur',
-  'Oliver',
-  'Dinah',
-];
-const lastNames = [
-  'Smith',
-  'Johnson',
-  'Williams',
-  'Brown',
-  'Jones',
-  'Garcia',
-  'Miller',
-  'Davis',
-  'Rodriguez',
-  'Martinez',
-  'Hernandez',
-  'Lopez',
-  'Gonzalez',
-  'Wilson',
-  'Anderson',
-  'Thomas',
-  'Taylor',
-  'Moore',
-  'Jackson',
-  'Martin',
-  'Lee',
-  'Perez',
-  'Thompson',
-  'White',
-  'Harris',
-  'Sanchez',
-  'Clark',
-  'Ramirez',
-];
 
 function generateLoginId(
   prefix: string,
@@ -149,31 +82,23 @@ async function main() {
   const currentYear = new Date().getFullYear();
   const serialsByYear: Record<number, number> = {};
 
-  // We will generate 30 employees total.
-  // 1: Admin, 2: John, 3-30: others
-  const employeesData = Array.from({ length: 30 }).map((_, i) => {
-    let email, password, role, firstName, lastName;
-    let deptName = randomElement(deptNames);
+  // Bootstrap only: the first ADMIN + one demo EMPLOYEE. Real employees are
+  // created through the app's "Add Employee" flow (ADR-012).
+  const employeesData = Array.from({ length: 2 }).map((_, i) => {
+    let email: string, password: string, role: Role, firstName: string, lastName: string;
+    const deptName = 'Engineering';
     if (i === 0) {
       email = 'admin@dayflow.com';
       password = passwordAdmin;
       role = Role.ADMIN;
       firstName = 'Super';
       lastName = 'Admin';
-      deptName = 'Engineering';
-    } else if (i === 1) {
+    } else {
       email = 'john@dayflow.com';
       password = passwordEmployee;
       role = Role.EMPLOYEE;
       firstName = 'John';
       lastName = 'Doe';
-      deptName = 'Engineering';
-    } else {
-      firstName = firstNames[i % firstNames.length];
-      lastName = lastNames[(i * 3) % lastNames.length];
-      email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@dayflow.com`;
-      password = passwordEmployee;
-      role = i === 2 ? Role.HR : Role.EMPLOYEE;
     }
 
     const joinYear = currentYear - randomInt(0, 3);
@@ -307,184 +232,6 @@ async function main() {
           year: currentYear,
           totalAllowed: allowed,
           used: randomInt(0, Math.floor(allowed / 3)),
-        },
-      });
-    }
-
-    // Generate Attendance and Payroll for last 3 months
-    for (let m = 2; m >= 0; m--) {
-      const monthDate = new Date(today.getFullYear(), today.getMonth() - m, 1);
-      const year = monthDate.getFullYear();
-      const month = monthDate.getMonth() + 1; // 1-12
-
-      let workingDays = 0;
-      let missingAttendanceDays = 0;
-      const unpaidLeaveDays = 0;
-
-      const daysInMonth = new Date(year, month, 0).getDate();
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const currentDate = new Date(Date.UTC(year, month - 1, d));
-        const dayOfWeek = currentDate.getUTCDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
-        workingDays++;
-
-        // Randomly assign attendance
-        let status = AttendanceStatus.PRESENT;
-        let hoursWorked = 8;
-
-        const rand = random();
-        if (rand < 0.05) {
-          status = AttendanceStatus.ABSENT;
-          hoursWorked = 0;
-          missingAttendanceDays++;
-        } else if (rand < 0.1) {
-          status = AttendanceStatus.ON_LEAVE;
-          hoursWorked = 0;
-        } else if (rand < 0.15) {
-          status = AttendanceStatus.HALF_DAY;
-          hoursWorked = 4;
-        }
-
-        let checkIn = null;
-        let checkOut = null;
-        if (status !== AttendanceStatus.ABSENT && status !== AttendanceStatus.ON_LEAVE) {
-          checkIn = new Date(Date.UTC(year, month - 1, d, 9, 0, 0));
-          checkOut = new Date(Date.UTC(year, month - 1, d, 9 + hoursWorked, 0, 0));
-        }
-
-        await prisma.attendance.upsert({
-          where: { employeeId_date: { employeeId: employee.id, date: currentDate } },
-          update: {},
-          create: {
-            employeeId: employee.id,
-            date: currentDate,
-            status,
-            checkIn,
-            checkOut,
-            hoursWorked,
-            breakMinutes: hoursWorked > 4 ? 60 : 0,
-          },
-        });
-      }
-
-      // Generate a Payroll Record for this month
-      const payableDays = workingDays - missingAttendanceDays - unpaidLeaveDays;
-      const netMonthly = wageNum - basicNum * 0.12 - 200;
-      const proratedNet = Math.round((netMonthly * payableDays) / workingDays);
-
-      await prisma.payrollRecord.upsert({
-        where: { employeeId_month_year: { employeeId: employee.id, month, year } },
-        update: {},
-        create: {
-          employeeId: employee.id,
-          month,
-          year,
-          monthlyWage: wageNum,
-          grossSalary: wageNum,
-          basic: basicNum,
-          hra: hraNum,
-          standardAllowance: stdNum,
-          performanceBonus: perfNum,
-          lta: ltaNum,
-          fixedAllowance: fixedNum,
-          pfEmployee: basicNum * 0.12,
-          pfEmployer: basicNum * 0.12,
-          professionalTax: 200,
-          totalDeductions: basicNum * 0.12 + 200,
-          workingDays,
-          payableDays,
-          netSalary: proratedNet,
-          status: PayrollStatus.PAID,
-          paidAt: new Date(Date.UTC(year, month - 1, daysInMonth, 23, 59, 59)),
-        },
-      });
-    }
-  }
-
-  // Set managers: Employee 2..29 report to John (index 1) or Admin (index 0)
-  for (let i = 2; i < createdEmployees.length; i++) {
-    const mgrId = randomBoolean(0.7) ? createdEmployees[1].id : createdEmployees[0].id;
-    await prisma.employee.update({
-      where: { id: createdEmployees[i].id },
-      data: { managerId: mgrId },
-    });
-  }
-
-  // Leave Requests — a spread of statuses for a realistic demo.
-  // Idempotent via deterministic ids. Admin (index 0) is the reviewer.
-  const reviewer = createdEmployees[0];
-  const countWorkingDays = (start: Date, end: Date) => {
-    let days = 0;
-    const cur = new Date(start);
-    while (cur <= end) {
-      const dow = cur.getUTCDay();
-      if (dow !== 0 && dow !== 6) days++;
-      cur.setUTCDate(cur.getUTCDate() + 1);
-    }
-    return Math.max(1, days);
-  };
-  const leaveSpecs = [
-    {
-      status: LeaveStatus.APPROVED,
-      type: LeaveType.PAID,
-      monthOffset: -1,
-      startDay: 10,
-      len: 2,
-      reason: 'Family function to attend out of town.',
-      comment: 'Approved. Enjoy your time off!',
-    },
-    {
-      status: LeaveStatus.PENDING,
-      type: LeaveType.SICK,
-      monthOffset: 0,
-      startDay: 22,
-      len: 1,
-      reason: 'Feeling unwell, need a day to recover.',
-      comment: null,
-    },
-    {
-      status: LeaveStatus.REJECTED,
-      type: LeaveType.CASUAL,
-      monthOffset: -2,
-      startDay: 5,
-      len: 3,
-      reason: 'Short-notice personal trip request.',
-      comment: 'Insufficient coverage for those dates.',
-    },
-  ];
-  for (let i = 1; i < createdEmployees.length; i++) {
-    const emp = createdEmployees[i];
-    const count = 1 + (i % 3); // 1..3 requests per employee
-    for (let n = 0; n < count; n++) {
-      const s = leaveSpecs[n];
-      const base = new Date(today.getFullYear(), today.getMonth() + s.monthOffset, s.startDay);
-      const start = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
-      const end = new Date(
-        Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + s.len - 1),
-      );
-      const reviewed = s.status !== LeaveStatus.PENDING;
-      await prisma.leaveRequest.upsert({
-        where: { id: `seed-leave-${emp.id}-${n}` },
-        update: {},
-        create: {
-          id: `seed-leave-${emp.id}-${n}`,
-          employeeId: emp.id,
-          leaveType: s.type,
-          startDate: start,
-          endDate: end,
-          totalDays: countWorkingDays(start, end),
-          reason: s.reason,
-          status: s.status,
-          reviewedById: reviewed ? reviewer.id : null,
-          reviewerComment: s.comment,
-          reviewedAt: reviewed
-            ? new Date(
-                Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() - 3),
-              )
-            : null,
-          attachmentUrl:
-            s.type === LeaveType.SICK ? 'https://files.dayflow.local/certs/sick-note.pdf' : null,
         },
       });
     }

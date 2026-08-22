@@ -10,6 +10,7 @@
  */
 import type {
   ApiResponse,
+  CreateEmployeeInput,
   EmploymentType,
   Gender,
   MaritalStatus,
@@ -205,6 +206,28 @@ export async function listEmployees(params: ListEmployeesParams = {}): Promise<E
 /** List all departments (`GET /departments`), sorted by name server-side. */
 export function listDepartments(): Promise<Department[]> {
   return api.get<Department[]>(API_ROUTES.departments.base);
+}
+
+/**
+ * Result of `POST /employees` (ADR-012). The server mints the `User`+`Employee`
+ * and generates a Login ID + a temporary password — `temporaryPassword` is
+ * returned exactly once here and must be shown to the admin immediately; it is
+ * never retrievable again.
+ */
+export interface CreateEmployeeResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  loginId: string;
+  role: Role;
+  temporaryPassword: string;
+  mustChangePassword: true;
+}
+
+/** Create a new employee (ADMIN/HR only, ADR-012). */
+export function createEmployee(body: CreateEmployeeInput): Promise<CreateEmployeeResult> {
+  return api.post<CreateEmployeeResult>(API_ROUTES.employees.create, body);
 }
 
 /** Convenience: an employee's full display name. */

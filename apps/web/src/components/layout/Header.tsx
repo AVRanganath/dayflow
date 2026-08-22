@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Menu, ChevronDown, LogOut, User as UserIcon, Settings } from 'lucide-react';
+import { Menu, ChevronDown, LogOut, User as UserIcon, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth/useAuth';
 import { Avatar } from '../ui/Avatar';
+import { NotificationBell } from './NotificationBell';
 
 export interface HeaderProps {
   title?: string;
@@ -60,14 +61,8 @@ export function Header({ title = 'Dashboard', greeting, onToggleSidebar }: Heade
 
       {/* Right section: Notification Bell + Avatar Dropdown */}
       <div className="flex items-center gap-3">
-        {/* Notification Bell with red dot badge */}
-        <button
-          className="relative flex h-9 w-9 items-center justify-center rounded border border-border bg-card text-text-secondary transition-colors hover:bg-background hover:text-text-primary"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-danger ring-2 ring-card" />
-        </button>
+        {/* Notification Bell (live data + dropdown) */}
+        <NotificationBell />
 
         {/* User Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
@@ -76,7 +71,12 @@ export function Header({ title = 'Dashboard', greeting, onToggleSidebar }: Heade
             className="flex items-center gap-2 rounded p-1 transition-colors hover:bg-background"
             aria-expanded={dropdownOpen}
           >
-            <Avatar name={displayName} src={user?.avatarUrl} size="sm" workStatus={user?.workStatus} />
+            <Avatar
+              name={displayName}
+              src={user?.avatarUrl}
+              size="sm"
+              workStatus={user?.workStatus}
+            />
             <ChevronDown className="h-4 w-4 text-text-secondary" />
           </button>
 

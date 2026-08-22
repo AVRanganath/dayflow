@@ -33,17 +33,13 @@ export function AttendanceDonut({ data, isLoading }: AttendanceDonutProps) {
   const chartSlices = [
     { name: 'Present', value: Math.max(data.present, 0), color: COLORS.present },
     { name: 'Absent', value: Math.max(data.absent, 0), color: COLORS.absent },
-    ...(data.halfDay > 0
-      ? [{ name: 'Half-day', value: data.halfDay, color: COLORS.halfDay }]
-      : []),
+    ...(data.halfDay > 0 ? [{ name: 'Half-day', value: data.halfDay, color: COLORS.halfDay }] : []),
     { name: 'On Leave', value: Math.max(data.onLeave, 0), color: COLORS.onLeave },
   ].filter((s) => s.value > 0);
 
   // If no data exists at all, render a default placeholder slice
   const displaySlices =
-    chartSlices.length > 0
-      ? chartSlices
-      : [{ name: 'No data', value: 1, color: '#DEE2E6' }];
+    chartSlices.length > 0 ? chartSlices : [{ name: 'No data', value: 1, color: '#DEE2E6' }];
 
   const totalCount = data.total || 1;
   const presentPct = data.presentPercentage;

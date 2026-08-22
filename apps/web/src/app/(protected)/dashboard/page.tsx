@@ -25,9 +25,5 @@ export default function DashboardPage() {
   const role = user?.role || 'EMPLOYEE';
   const isAdminOrHr = role === 'ADMIN' || role === 'HR';
 
-  return (
-    <div className="w-full">
-      {isAdminOrHr ? <AdminDashboard /> : <EmployeeDashboard />}
-    </div>
-  );
+  return <div className="w-full">{isAdminOrHr ? <AdminDashboard /> : <EmployeeDashboard />}</div>;
 }

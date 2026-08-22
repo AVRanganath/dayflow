@@ -48,6 +48,16 @@ class AuthStore {
   }
 
   /**
+   * Stores/refreshes just the access token, preserving the current user.
+   * Used by the silent refresh flow on page reload, where `/auth/refresh`
+   * returns a new access token but no user object yet.
+   */
+  public setToken(token: string): void {
+    this.accessToken = token;
+    this.notify();
+  }
+
+  /**
    * Gets the current access token.
    */
   public getAccessToken(): string | null {
