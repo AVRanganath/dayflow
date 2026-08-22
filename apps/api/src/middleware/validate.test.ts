@@ -12,7 +12,12 @@ describe('Validate Middleware', () => {
   it('calls next and sets req.body for valid data', () => {
     const middleware = validate(schema);
     const req = {
-      body: { name: 'John', age: 30, extra: 'ignored by parse but included in body, wait, safeParse preserves extra if not strict?' }
+      body: {
+        name: 'John',
+        age: 30,
+        extra:
+          'ignored by parse but included in body, wait, safeParse preserves extra if not strict?',
+      },
     } as Request;
     // actually Zod by default drops unrecognized keys on parse
     req.body = { name: 'John', age: 30, extra: 'ignored' };
@@ -30,7 +35,7 @@ describe('Validate Middleware', () => {
   it('calls next with ZodError for invalid data', () => {
     const middleware = validate(schema);
     const req = {
-      body: { name: 'J', age: 'not-a-number' } // invalid
+      body: { name: 'J', age: 'not-a-number' }, // invalid
     } as unknown as Request;
     const res = {} as Response;
     const next = vi.fn() as NextFunction;

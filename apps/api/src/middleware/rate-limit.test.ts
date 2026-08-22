@@ -10,13 +10,13 @@ vi.mock('../lib/redis.js', () => ({
     incr: vi.fn(),
     expire: vi.fn(),
     ttl: vi.fn(),
-  }
+  },
 }));
 
 vi.mock('../lib/logger.js', () => ({
   logger: {
     warn: vi.fn(),
-  }
+  },
 }));
 
 describe('Rate Limit Middleware', () => {
@@ -74,7 +74,7 @@ describe('Rate Limit Middleware', () => {
     await middleware(req, res, next);
 
     expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 0); // Math.max(10 - 11, 0)
-    
+
     // next should be called with AppError RATE_LIMITED
     expect(next).toHaveBeenCalledOnce();
     const errArg = vi.mocked(next).mock.calls[0]![0];
@@ -97,7 +97,7 @@ describe('Rate Limit Middleware', () => {
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ requestId: 'req-1' }),
-      'rate limiter unavailable — allowing request (fail-open)'
+      'rate limiter unavailable — allowing request (fail-open)',
     );
     expect(next).toHaveBeenCalledWith(); // Allowed to continue
   });

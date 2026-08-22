@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { AppError, NotFoundError, ValidationError, UnauthorizedError, ForbiddenError, ConflictError } from './errors.js';
+import {
+  AppError,
+  NotFoundError,
+  ValidationError,
+  UnauthorizedError,
+  ForbiddenError,
+  ConflictError,
+} from './errors.js';
 
 describe('AppErrors', () => {
   it('AppError should set properties correctly', () => {

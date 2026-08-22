@@ -8,7 +8,7 @@ import { logger } from '../lib/logger.js';
 vi.mock('../lib/logger.js', () => ({
   logger: {
     error: vi.fn(),
-  }
+  },
 }));
 
 describe('Global Error Handler', () => {
@@ -36,7 +36,13 @@ describe('Global Error Handler', () => {
 
   it('handles ZodError and sends VALIDATION_ERROR envelope', () => {
     const issues: ZodIssue[] = [
-      { code: 'invalid_type', expected: 'string', received: 'number', path: ['name'], message: 'Expected string, received number' }
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        received: 'number',
+        path: ['name'],
+        message: 'Expected string, received number',
+      },
     ];
     const err = new ZodError(issues);
     const req = {} as Request;
@@ -49,13 +55,15 @@ describe('Global Error Handler', () => {
     errorHandler(err, req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      success: false,
-      error: expect.objectContaining({
-        code: 'VALIDATION_ERROR',
-        message: 'Validation failed',
-      })
-    }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+        }),
+      }),
+    );
   });
 
   it('handles unknown errors, logs them, and sends 500 INTERNAL_ERROR', () => {

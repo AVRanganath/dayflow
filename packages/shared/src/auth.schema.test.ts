@@ -110,10 +110,14 @@ describe('Auth Schemas', () => {
 
   describe('ResetPasswordSchema', () => {
     it('validates token and password', () => {
-      expect(ResetPasswordSchema.safeParse({ token: 'abc', newPassword: 'longpassword' }).success).toBe(true);
+      expect(
+        ResetPasswordSchema.safeParse({ token: 'abc', newPassword: 'longpassword' }).success,
+      ).toBe(true);
     });
     it('rejects short password', () => {
-      expect(ResetPasswordSchema.safeParse({ token: 'abc', newPassword: 'short' }).success).toBe(false);
+      expect(ResetPasswordSchema.safeParse({ token: 'abc', newPassword: 'short' }).success).toBe(
+        false,
+      );
     });
   });
 });

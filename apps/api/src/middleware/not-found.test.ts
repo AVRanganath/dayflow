@@ -13,7 +13,7 @@ describe('Not Found Middleware', () => {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
     } as unknown as Response;
-    
+
     const next = vi.fn() as NextFunction;
 
     notFound(req, res, next);

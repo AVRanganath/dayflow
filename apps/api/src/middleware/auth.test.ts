@@ -31,7 +31,9 @@ describe('Auth Middleware', () => {
       const next = vi.fn() as NextFunction;
 
       expect(() => requireAuth(req, res, next)).toThrow(UnauthorizedError);
-      expect(() => requireAuth(req, res, next)).toThrow('Missing or malformed Authorization header');
+      expect(() => requireAuth(req, res, next)).toThrow(
+        'Missing or malformed Authorization header',
+      );
     });
 
     it('throws UnauthorizedError if header does not start with Bearer', () => {
@@ -69,9 +71,11 @@ describe('Auth Middleware', () => {
       const next = vi.fn() as NextFunction;
 
       const middleware = requireRole('HR', 'ADMIN');
-      
+
       expect(() => middleware(req, res, next)).toThrow(ForbiddenError);
-      expect(() => middleware(req, res, next)).toThrow('You do not have permission to access this resource');
+      expect(() => middleware(req, res, next)).toThrow(
+        'You do not have permission to access this resource',
+      );
     });
 
     it('throws UnauthorizedError if req.user is missing (e.g. requireAuth not called)', () => {
@@ -80,7 +84,7 @@ describe('Auth Middleware', () => {
       const next = vi.fn() as NextFunction;
 
       const middleware = requireRole('HR', 'ADMIN');
-      
+
       expect(() => middleware(req, res, next)).toThrow(UnauthorizedError);
     });
   });

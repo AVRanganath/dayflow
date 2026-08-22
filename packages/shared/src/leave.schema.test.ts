@@ -47,7 +47,7 @@ describe('Leave Schemas', () => {
     it('validates correct rejection', () => {
       expect(RejectLeaveSchema.safeParse({ reason: 'Insufficient balance' }).success).toBe(true);
     });
-    
+
     it('rejects short reasons', () => {
       expect(RejectLeaveSchema.safeParse({ reason: 'No' }).success).toBe(false);
     });

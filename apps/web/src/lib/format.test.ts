@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { formatINR, formatHours, formatDate, initials, getAvatarColor, AVATAR_PALETTE } from './format.js';
+import {
+  formatINR,
+  formatHours,
+  formatDate,
+  initials,
+  getAvatarColor,
+  AVATAR_PALETTE,
+} from './format.js';
 
 describe('format utils', () => {
   describe('formatINR', () => {

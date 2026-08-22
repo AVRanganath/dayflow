@@ -10,12 +10,12 @@ vi.mock('../auth/auth-store', () => ({
     getUser: vi.fn(),
     setSession: vi.fn(),
     clearSession: vi.fn(),
-  }
+  },
 }));
 
 describe('API Client', () => {
   const mockFetch = vi.fn();
-  
+
   beforeEach(() => {
     global.fetch = mockFetch;
     vi.clearAllMocks();
@@ -36,7 +36,7 @@ describe('API Client', () => {
     expect(data).toEqual({ id: 1 });
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/users/1'),
-      expect.objectContaining({ method: 'GET' })
+      expect.objectContaining({ method: 'GET' }),
     );
   });
 
@@ -49,7 +49,7 @@ describe('API Client', () => {
     });
 
     await api.get('/users/1');
-    
+
     const fetchArgs = mockFetch.mock.calls[0]![1];
     expect(fetchArgs.headers.get('Authorization')).toBe('Bearer token-123');
   });
@@ -60,7 +60,7 @@ describe('API Client', () => {
       status: 400,
       json: async () => ({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Bad request', details: { field: 'err' } }
+        error: { code: 'VALIDATION_ERROR', message: 'Bad request', details: { field: 'err' } },
       }),
     });
 
@@ -87,7 +87,7 @@ describe('API Client', () => {
       status: 200,
       json: async () => ({
         success: true,
-        data: { accessToken: 'new-token', user: { id: '1', role: 'EMPLOYEE' } }
+        data: { accessToken: 'new-token', user: { id: '1', role: 'EMPLOYEE' } },
       }),
     });
 
@@ -104,10 +104,10 @@ describe('API Client', () => {
       .mockReturnValueOnce('new-token'); // 3rd call (retry)
 
     const data = await api.get('/protected');
-    
+
     expect(data).toEqual({ success: 'yes' });
     expect(mockFetch).toHaveBeenCalledTimes(3);
-    
+
     // First call was to /protected
     expect(mockFetch.mock.calls[0]![0]).toContain('/protected');
     // Second call was to /auth/refresh
@@ -123,7 +123,7 @@ describe('API Client', () => {
   it('clears session and redirects if refresh fails on 401', async () => {
     // We can't easily test window.location.href assignment in JSDOM/happy-dom this way without overriding
     // but we can test authStore.clearSession gets called
-    
+
     // 1st request: returns 401
     mockFetch.mockResolvedValueOnce({
       ok: false,

@@ -46,7 +46,9 @@ describe('Employee Schemas', () => {
     });
 
     it('rejects invalid iso dates', () => {
-      expect(AdminUpdateEmployeeSchema.safeParse({ dateOfBirth: '01/01/1990' }).success).toBe(false);
+      expect(AdminUpdateEmployeeSchema.safeParse({ dateOfBirth: '01/01/1990' }).success).toBe(
+        false,
+      );
       expect(AdminUpdateEmployeeSchema.safeParse({ dateOfBirth: '1990-1-1' }).success).toBe(false);
     });
 
@@ -103,7 +105,7 @@ describe('Employee Schemas', () => {
       });
       expect(result.success).toBe(true);
     });
-    
+
     it('validates without any filters', () => {
       expect(EmployeeListQuerySchema.safeParse({}).success).toBe(true);
     });

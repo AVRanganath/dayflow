@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  CompanySettingsSchema,
-  UpdateCompanySchema,
-} from './company.schema.js';
+import { CompanySettingsSchema, UpdateCompanySchema } from './company.schema.js';
 
 describe('Company Schemas', () => {
   describe('CompanySettingsSchema', () => {
@@ -43,7 +40,9 @@ describe('Company Schemas', () => {
     });
 
     it('rejects too long login id prefix', () => {
-      expect(UpdateCompanySchema.safeParse({ loginIdPrefix: 'THISISVERYLONG' }).success).toBe(false);
+      expect(UpdateCompanySchema.safeParse({ loginIdPrefix: 'THISISVERYLONG' }).success).toBe(
+        false,
+      );
     });
   });
 });

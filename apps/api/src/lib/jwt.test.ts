@@ -9,7 +9,7 @@ vi.mock('../config/env.js', () => ({
     JWT_ACCESS_EXPIRY: '15m',
     JWT_REFRESH_SECRET: 'test-refresh-secret',
     JWT_REFRESH_EXPIRY: '7d',
-  }
+  },
 }));
 
 describe('JWT Utils', () => {
@@ -28,7 +28,7 @@ describe('JWT Utils', () => {
     it('signs and verifies a valid access token', () => {
       const token = signAccessToken(accessPayload);
       expect(typeof token).toBe('string');
-      
+
       const decoded = verifyAccess(token);
       expect(decoded.sub).toBe(accessPayload.sub);
       expect(decoded.employeeId).toBe(accessPayload.employeeId);
@@ -56,7 +56,7 @@ describe('JWT Utils', () => {
     it('signs and verifies a valid refresh token', () => {
       const token = signRefreshToken(refreshPayload);
       expect(typeof token).toBe('string');
-      
+
       const decoded = verifyRefresh(token);
       expect(decoded.sub).toBe(refreshPayload.sub);
       expect(decoded.role).toBe(refreshPayload.role);
