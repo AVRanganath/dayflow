@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: 2026-08-22 · by: Chandan (S08)
+Last updated: 2026-08-22 · by: Ranganath (S13)
 
 ---
 
@@ -37,7 +37,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
 | S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
-| S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
+| S13 | Profile + directory | DONE | Pramith | feat/s13-profile-directory | S10, S05 | `/profile`, `/employees`, `/employees/:id` (view-only); `lib/employees.ts` fetchers (see detail) |
 | S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
 | S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
 | S16 | Polish, tests, prod, demo | TODO | all four | — | all | Dockerfiles, tests, README, demo script |
@@ -61,6 +61,51 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
 
+### S13 — Profile & Employee Directory (DONE)
+- **Routes added** (all under `apps/web/src/app/(protected)/` — the real S10 route
+  group; the session file's `app/(app)/` path was aspirational):
+  - `/profile` — PAGE 5, role-agnostic. Loads `GET /employees/me`. Header (120px avatar
+    w/ camera upload, name, designation, department badge, Employee ID, "Edit Profile")
+    + board tabs (ADR-015): **Resume**, **Private Info**, **Job Details**, and
+    **Salary Info (ADMIN-only, ADR-013)**. Tab components in `profile/_components/`:
+    `resume-tab.tsx`, `private-info-tab.tsx`, `job-details-tab.tsx`, `salary-info-tab.tsx`,
+    `avatar-upload.tsx`, `profile-field.tsx` (shared `ReadonlyField` locked-box).
+  - `/employees` — PAGE 6, **ADMIN/HR only**. Top bar (title + live count, search,
+    Department/Employment-Type/Status filters, "Add Employee"), a **table ⇄ card-grid**
+    toggle, and cursor pagination. Components in `employees/_components/`:
+    `employee-table.tsx`, `employee-card.tsx` (ADR-017 work-status icon), `employee-filters.tsx`
+    (debounced search), `employee-pagination.tsx`.
+  - `/employees/:id` — **view-only** employee page (read-only reuse of the profile view;
+    no edit controls). ADMIN/HR only; opened by clicking a directory row or card.
+- **API helper `apps/web/src/lib/employees.ts`** (typed, no `any`): `getMe()`,
+  `updateMe(body)` (`PUT /employees/me`, shared `UpdateProfileSchema`), `getEmployee(id)`,
+  `uploadProfilePicture(id, file)` (reads the File → base64 **data URL** → `PATCH
+  /employees/:id/profile-picture` JSON `{ url }`; the stub schema `z.string().url()`
+  accepts data URLs and returns them verbatim, so the picture round-trips), `listEmployees(params)`
+  (**reads the raw envelope** to get `meta.nextCursor` — S10's `api.get` drops `meta`),
+  `listDepartments()`, plus the `Employee`/`Department`/`EmployeePage` response types
+  (declared here — `@dayflow/shared` only infers *input* types).
+- **Role-gate pattern:** the directory + view-only route redirect non-management users
+  (`role !== ADMIN|HR`) to `/dashboard` in a `useEffect` and render a spinner meanwhile;
+  the S10 sidebar already hides the nav item for employees; the API's `requireRole` +
+  row-level guard are the final gate. **Salary Info tab** is gated on `role === 'ADMIN'`.
+- **Work-status icon source:** the `workStatus` field (`PRESENT|ABSENT|ON_LEAVE`, ADR-017)
+  on each `/employees` row and on `/employees/me` → 🟢 / 🟡 / ✈️ on the directory card
+  (top-right) and the view-only header.
+- **Resume-tab fields:** **found** — `about/whatILove/hobbies/skills/certifications` are on
+  the `/employees/me` payload and self-editable via `PUT /employees/me` (verified end-to-end
+  against the seeded DB). `skills`/`certifications` are **string arrays** (comma-separated
+  in the UI), not the API.md doc's single string — the shared schema (`z.array(z.string())`)
+  is authoritative.
+- **No shared-schema changes.** One web-only build fix: `apps/web/next.config.mjs` gained a
+  webpack `resolve.extensionAlias` so `@dayflow/shared`'s NodeNext `.js` import specifiers
+  resolve to their `.ts` sources when webpack transpiles the package (S13 is the first web
+  code to import *runtime* values from the shared barrel, which surfaced this latent gap —
+  UI-only imports before never triggered it). Not a contract change.
+- **Note for S15 (payroll UI):** the Salary Info tab renders the ADR-013 read-only structure
+  with `—` placeholders because `/employees/me` carries **no** salary data — wire it to the
+  payroll module when that lands. Job Details shows the reporting manager as `managerId`
+  (an employee cannot read another employee's record to resolve a name; row-level guard).
 ### S11 — Auth Pages (DONE)
 - **Routes & Pages (`apps/web/src/app/(auth)/`):**
   - `(auth)/layout.tsx`: Split-screen public auth shell (left 50% brand panel with plum-to-dark-plum gradient, Montserrat Dayflow wordmark, Caveat Brush 52px marker headline with `#F0B93F` marker highlight behind "perfectly aligned.", 340px ring + 120px rotated square geometry, Caveat Brush 22px footnote; right panel hosting auth forms). Auto-redirects authenticated users to `/dashboard` (or `/change-password` if `mustChangePassword=true`).
