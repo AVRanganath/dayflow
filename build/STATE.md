@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: _initial scaffold_ · by: _setup_
+Last updated: 2026-08-22 · by: Mukunda (S03)
 
 ---
 
@@ -25,9 +25,9 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | # | Session | Status | Owner | Branch | Depends on | Interfaces produced (fill on DONE) |
 |---|---------|--------|-------|--------|-----------|------------------------------------|
 | S00 | Bootstrap & tooling | DONE | Chandan | feat/s00-bootstrap | — | npm workspaces + turbo, shared config, docker-compose, `.env.example` |
-| S01 | Database (Prisma) | TODO | Ranganath | — | S00 | migration name, seed cmd, demo creds |
+| S01 | Database (Prisma) | DONE | Ranganath | feat/s01-database | S00 | Migration `init`, `db:seed`, demo creds, `@dayflow/db` export |
 | S02 | Shared package | DONE | Chandan | feat/s02-shared | S00 | Zod schemas + `z.infer` types + enums/routes/envelope (see detail) |
-| S03 | API core | TODO | Ranganath | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
+| S03 | API core | DONE | Mukunda | feat/s03-api-core | S01, S02 | app bootstrap, middleware, `AppError`, `/health` (see detail) |
 | S04 | Auth module | TODO | Chandan | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
 | S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
 | S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
@@ -44,13 +44,13 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 
 ### Assignment & order (who does what, and the gate to start)
 - **Chandan** (backend): S00 → S02 → S04 → S06 → S08. *Runs S00 first, alone — everyone waits on it.*
-- **Ranganath** (backend): S01 → S03 → S05 → S07 → S09. *S09 is last (needs all of S04–S08).*
+- **Ranganath** (backend): S01 → S05 → S07 → S09. *S09 is last (needs all of S04–S08).*
 - **Pramith** (frontend): S10 → S11 → S13. *S10 unlocks all frontend.*
-- **Mukunda** (frontend): S14 → S15 → S12. *Starts once S06/S07 land; pairs on S10 meanwhile.*
+- **Mukunda**: **S03 (API core)** → S14 → S15 → S12. *Takes S03 first — it's unblocked by S01+S02 and gates all backend modules; frontend pages follow once S10 + their modules land.*
 - **All four**: S16 together at the end.
 
 **Wave order:** ① Chandan S00 (solo) → ② Ranganath S01 + Chandan S02 (parallel) →
-③ Ranganath S03 + Pramith S10 (parallel) → ④ backend fans out (Chandan S04/S06/S08,
+③ Mukunda S03 + Pramith S10 (parallel) → ④ backend fans out (Chandan S04/S06/S08,
 Ranganath S05/S07) while frontend follows each module (Pramith S11→S13, Mukunda
 S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
@@ -61,13 +61,54 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
 
-<!--
 ### S03 — API core (DONE)
-- App entry: `apps/api/src/server.ts`, exports nothing; run with `npm run dev -w apps/api`.
-- Error envelope implemented in `apps/api/src/middleware/error.ts`; throw `AppError` subclasses from `apps/api/src/lib/errors.ts`.
-- Base router mounted at `/api/v1`. Health: `GET /api/v1/health` → `{ success: true, data: { status: "ok" } }`.
-- Auth middleware STUBS exist at `apps/api/src/middleware/auth.ts` — S04 fills them in.
--->
+- **Boot:** `apps/api/src/server.ts` is the process entry (`npm run dev -w apps/api`,
+  loads `apps/api/.env` via `tsx --env-file`); listens on `env.PORT` (default 8000),
+  connects Redis, handles `SIGINT`/`SIGTERM`. `apps/api/src/app.ts` builds the Express
+  app (helmet, cors from `CORS_ORIGIN`, `express.json`, request-id, pino-http request
+  logging, rate limit, router, `notFound`, `errorHandler` — in that order) and
+  exports `app` with no `listen()`.
+- **Env:** `apps/api/src/config/env.ts` exports typed `env` (Zod-validated); invalid
+  env logs issues and `process.exit(1)`.
+- **Errors:** `apps/api/src/lib/errors.ts` exports `AppError` + `NotFoundError` (404),
+  `ValidationError` (400), `UnauthorizedError` (401), `ForbiddenError` (403),
+  `ConflictError` (409). `apps/api/src/middleware/error.ts` is the single global
+  handler: `AppError` → its status + ADR-010 envelope; `ZodError` → 400
+  `VALIDATION_ERROR` with `error.details` from `.flatten()`; anything else → 500
+  `INTERNAL_ERROR` (logged via pino, never leaked to the client).
+  `apps/api/src/middleware/not-found.ts` renders unmatched routes the same way.
+- **Clients:** `apps/api/src/lib/prisma.ts` re-exports `prisma` from `@dayflow/db`
+  (no second client). `apps/api/src/lib/redis.ts` exports a single shared `redis`
+  (`ioredis`) instance built from `REDIS_URL`. `apps/api/src/lib/logger.ts` exports
+  the shared `pino` `logger`.
+- **Auth stubs (for S04):** `apps/api/src/middleware/auth.ts` exports
+  `requireAuth(req, res, next)` and `requireRole(...roles: Role[])` with final
+  signatures; both currently `throw new UnauthorizedError('... not implemented yet (see S04)')`.
+  Also exports `AuthUser { id: string; role: Role }` and augments
+  `Express.Request.user?: AuthUser` — import this type, don't redeclare it.
+- **Rate limiting:** `apps/api/src/middleware/rate-limit.ts` exports
+  `rateLimit({ windowSeconds, max })`, a Redis fixed-window limiter keyed by
+  `${baseUrl}${path}:${ip}`; sets `X-RateLimit-Limit/Remaining/Reset`. A default
+  instance (`windowSeconds: 60, max: 100`) is applied to all of `/api/v1` in
+  `app.ts`. **S04 should apply a tighter instance directly on the auth router**
+  (e.g. signin/signup) rather than relying on this default.
+- **Router:** `apps/api/src/routes/index.ts` exports `router`, mounted at
+  `API_BASE` (`/api/v1`) in `app.ts`. `GET /api/v1/health` →
+  `{ success:true, data:{ status:"ok" } }`. TODO comments mark exactly where S04–S09
+  mount their feature routers — add `router.use('/auth', authRouter)` etc. there.
+- **Request id:** `apps/api/src/middleware/request-id.ts` sets `req.id` (UUID) and
+  echoes it as `X-Request-Id`.
+- **New deps added to `apps/api`:** `helmet`, `cors` (+`@types/cors`), `ioredis`,
+  `pino`, `pino-http`. Dev/start scripts now point at `server.ts` (was the S00
+  placeholder `index.ts`, which is deleted).
+- Unblocks S04–S08 (all can now build feature routers/services against real
+  `AppError`, `requireAuth`/`requireRole` stubs, `prisma`, `redis`, `logger`).
+
+### S01 — Database (Prisma) (DONE)
+- `packages/db/prisma/schema.prisma` contains the final schema per ADRs.
+- `packages/db/prisma/seed.ts` provides a rich, idempotent demo dataset.
+- `packages/db/src/index.ts` exports `prisma` singleton and re-exports `@prisma/client` types.
+- Initial migration applied.
 
 ### S10 — Web foundation (DONE)
 - **App framework:** Next.js 14 (App Router) in `apps/web`. Dev server on port 3000 (`npm run dev -w apps/web`).

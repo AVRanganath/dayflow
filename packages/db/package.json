@@ -26,6 +26,8 @@
   },
   "devDependencies": {
     "@dayflow/config": "*",
+    "@types/bcryptjs": "^3.0.0",
+    "bcryptjs": "^3.0.3",
     "prisma": "^6.5.0",
     "tsx": "^4.19.1"
   }
