@@ -18,6 +18,8 @@ export default tseslint.config(
       '**/*.config.js',
       '**/*.config.cjs',
       'packages/db/prisma/generated/**',
+      // Design-handoff prototypes (vanilla browser HTML/JS) — reference artifacts, not app code.
+      'UI/**',
     ],
   },
   eslint.configs.recommended,

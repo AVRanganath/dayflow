@@ -25,7 +25,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | # | Session | Status | Owner | Branch | Depends on | Interfaces produced (fill on DONE) |
 |---|---------|--------|-------|--------|-----------|------------------------------------|
 | S00 | Bootstrap & tooling | DONE | Chandan | feat/s00-bootstrap | — | npm workspaces + turbo, shared config, docker-compose, `.env.example` |
-| S01 | Database (Prisma) | TODO | Ranganath | — | S00 | migration name, seed cmd, demo creds |
+| S01 | Database (Prisma) | DONE | Ranganath | feat/s01-database | S00 | Migration `init`, `db:seed`, demo creds, `@dayflow/db` export |
 | S02 | Shared package | DONE | Chandan | feat/s02-shared | S00 | Zod schemas + `z.infer` types + enums/routes/envelope (see detail) |
 | S03 | API core | TODO | Mukunda | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
 | S04 | Auth module | TODO | Chandan | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
@@ -68,6 +68,12 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 - Base router mounted at `/api/v1`. Health: `GET /api/v1/health` → `{ success: true, data: { status: "ok" } }`.
 - Auth middleware STUBS exist at `apps/api/src/middleware/auth.ts` — S04 fills them in.
 -->
+
+### S01 — Database (Prisma) (DONE)
+- `packages/db/prisma/schema.prisma` contains the final schema per ADRs.
+- `packages/db/prisma/seed.ts` provides a rich, idempotent demo dataset.
+- `packages/db/src/index.ts` exports `prisma` singleton and re-exports `@prisma/client` types.
+- Initial migration applied.
 
 ### S02 — Shared package `@dayflow/shared` (DONE)
 Import everything from `@dayflow/shared`. Every type is `z.infer` from its schema —
