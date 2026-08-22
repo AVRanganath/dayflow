@@ -185,7 +185,10 @@ export async function checkOut(employeeId: string, input: CheckOutInput): Promis
  *   - `weekly`  → the last 7 days (today − 6 … today).
  *   - `monthly` → the 1st of the current month … today (the default, day-wise view).
  */
-export function rangeWindow(range: AttendanceRange, now: Date = today()): { start: Date; end: Date } {
+export function rangeWindow(
+  range: AttendanceRange,
+  now: Date = today(),
+): { start: Date; end: Date } {
   const end = toDateOnly(now);
   if (range === 'daily') return { start: end, end };
   if (range === 'weekly') {
