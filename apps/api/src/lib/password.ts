@@ -1,19 +1,27 @@
 /**
- * Password hashing helper (bcrypt). Owned here so employee-create (ADR-012) can
- * hash the temporary password. S04 auth reuses the same primitive when it lands;
- * if S04 introduces its own canonical helper, this can be folded into it.
+ * Password hashing helpers (plan.md §6 — bcrypt). Wraps `bcryptjs` so the cost
+ * factor and algorithm live in one place. Cost 10 balances demo speed and safety.
  */
 import bcrypt from 'bcryptjs';
 
-/** Work factor for bcrypt. 10 is a sane default for the demo. */
+/** bcrypt cost factor (>= 10 per the session spec). */
 const SALT_ROUNDS = 10;
 
 /**
- * Hash a plaintext password with bcrypt.
- *
- * @param plain - The plaintext password.
- * @returns The bcrypt hash to persist on `User.passwordHash`.
+ * Hashes a plaintext password with bcrypt.
+ * @param plain - The user-supplied plaintext password.
+ * @returns The bcrypt hash to persist as `User.passwordHash`.
  */
 export async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, SALT_ROUNDS);
+}
+
+/**
+ * Verifies a plaintext password against a stored bcrypt hash.
+ * @param plain - The candidate plaintext password.
+ * @param hash - The stored bcrypt hash.
+ * @returns `true` when the password matches, else `false`.
+ */
+export async function comparePassword(plain: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(plain, hash);
 }
