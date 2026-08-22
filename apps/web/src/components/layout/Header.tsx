@@ -76,7 +76,7 @@ export function Header({ title = 'Dashboard', greeting, onToggleSidebar }: Heade
             className="flex items-center gap-2 rounded p-1 transition-colors hover:bg-background"
             aria-expanded={dropdownOpen}
           >
-            <Avatar name={displayName} src={user?.avatarUrl} size="sm" />
+            <Avatar name={displayName} src={user?.avatarUrl} size="sm" workStatus={user?.workStatus} />
             <ChevronDown className="h-4 w-4 text-text-secondary" />
           </button>
 

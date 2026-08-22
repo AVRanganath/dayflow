@@ -5,6 +5,9 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { initials as getInitials, getAvatarColor } from '../../lib/format';
 
+import type { WorkStatus } from '@dayflow/shared';
+import { WorkStatusBadge } from './WorkStatusBadge';
+
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export interface AvatarProps {
@@ -13,10 +16,12 @@ export interface AvatarProps {
   size?: AvatarSize;
   color?: string;
   className?: string;
+  workStatus?: WorkStatus | string | null;
 }
 
 /**
- * Reusable circular Avatar primitive with initials fallback and deterministic color palette.
+ * Reusable circular Avatar primitive with initials fallback, deterministic color palette,
+ * and optional ADR-017 work status indicator (🟢/🟡/✈️).
  */
 export function Avatar({
   name = 'User',
@@ -24,6 +29,7 @@ export function Avatar({
   size = 'md',
   color,
   className,
+  workStatus,
 }: AvatarProps) {
   const [imgError, setImgError] = useState(false);
 
@@ -41,14 +47,14 @@ export function Avatar({
 
   const showImage = src && !imgError;
 
-  return (
+  const avatarContent = (
     <div
       style={{ backgroundColor: !showImage ? bgColor : undefined }}
       className={twMerge(
         clsx(
           'relative inline-flex flex-shrink-0 items-center justify-center rounded-full overflow-hidden select-none font-semibold text-white shadow-sm',
           sizeConfig.container,
-          className,
+          !workStatus && className,
         ),
       )}
     >
@@ -62,6 +68,21 @@ export function Avatar({
       ) : (
         <span className={clsx('tracking-wider', sizeConfig.text)}>{initialsText}</span>
       )}
+    </div>
+  );
+
+  if (!workStatus) {
+    return avatarContent;
+  }
+
+  const badgeSize = size === 'xs' ? 'sm' : size === 'sm' || size === 'md' ? 'md' : 'lg';
+
+  return (
+    <div className={twMerge(clsx('relative inline-flex flex-shrink-0', className))}>
+      {avatarContent}
+      <div className="absolute -bottom-0.5 -right-0.5 z-10 rounded-full bg-card p-[1px]">
+        <WorkStatusBadge status={workStatus} size={badgeSize} />
+      </div>
     </div>
   );
 }

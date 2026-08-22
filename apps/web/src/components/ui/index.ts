@@ -14,3 +14,4 @@ export * from './EmptyState';
 export * from './Toast';
 export * from './ProgressBar';
 export * from './StatsCard';
+export * from './WorkStatusBadge';
