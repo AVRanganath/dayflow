@@ -1,0 +1,221 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  ON_LEAVE
+}
+
+enum LeaveType {
+  PAID
+  SICK
+  UNPAID
+  CASUAL
+  MATERNITY
+  PATERNITY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayrollStatus {
+  DRAFT
+  PROCESSED
+  PAID
+}
+
+// User model for authentication and core identity
+model User {
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  passwordHash           String
+  role                   Role
+  isEmailVerified        Boolean   @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpiry    DateTime?
+  refreshToken           String?
+  isActive               Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  employee               Employee?
+  auditLogs              AuditLog[]
+
+  @@index([email])
+}
+
+// Employee profile detailing personal and work-related information
+model Employee {
+  id              String         @id @default(uuid())
+  userId          String         @unique
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId      String         @unique // e.g., 'EMP001'
+  firstName       String
+  lastName        String
+  email           String         // Work email
+  phone           String?
+  dateOfBirth     DateTime?      @db.Date
+  gender          Gender?
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  zipCode         String?
+  profilePicture  String?
+  departmentId    String?
+  department      Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designation     String?
+  dateOfJoining   DateTime       @db.Date
+  employmentType  EmploymentType
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  attendances     Attendance[]
+  leaveRequests   LeaveRequest[] @relation("EmployeeLeaves")
+  leaveBalances   LeaveBalance[]
+  payrollRecords  PayrollRecord[]
+  reviewedLeaves  LeaveRequest[] @relation("LeaveReviewer")
+}
+
+// Departments within the organization
+model Department {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  employees   Employee[]
+}
+
+// Daily attendance records
+model Attendance {
+  id          String           @id @default(uuid())
+  employeeId  String
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime         @db.Date
+  checkIn     DateTime?
+  checkOut    DateTime?
+  status      AttendanceStatus
+  hoursWorked Decimal?         @db.Decimal(5, 2)
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+  @@index([employeeId, date])
+}
+
+// Leave requests submitted by employees
+model LeaveRequest {
+  id              String      @id @default(uuid())
+  employeeId      String
+  employee        Employee    @relation("EmployeeLeaves", fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType       LeaveType
+  startDate       DateTime    @db.Date
+  endDate         DateTime    @db.Date
+  totalDays       Decimal     @db.Decimal(5, 2)
+  reason          String      @db.Text
+  status          LeaveStatus @default(PENDING)
+  reviewedById    String?
+  reviewer        Employee?   @relation("LeaveReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewerComment String?
+  reviewedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([employeeId, status])
+}
+
+// Allocated and used leave balances per year
+model LeaveBalance {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType    LeaveType
+  year         Int
+  totalAllowed Decimal   @db.Decimal(5, 2)
+  used         Decimal   @default(0) @db.Decimal(5, 2)
+  // Remaining is computed logically (totalAllowed - used)
+  
+  @@unique([employeeId, leaveType, year])
+}
+
+// Monthly payroll records
+model PayrollRecord {
+  id                   String        @id @default(uuid())
+  employeeId           String
+  employee             Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month                Int
+  year                 Int
+  basicSalary          Decimal       @db.Decimal(10, 2)
+  hra                  Decimal       @db.Decimal(10, 2)
+  conveyanceAllowance  Decimal       @db.Decimal(10, 2)
+  medicalAllowance     Decimal       @db.Decimal(10, 2)
+  specialAllowance     Decimal       @db.Decimal(10, 2)
+  providentFund        Decimal       @db.Decimal(10, 2)
+  professionalTax      Decimal       @db.Decimal(10, 2)
+  incomeTax            Decimal       @db.Decimal(10, 2)
+  grossSalary          Decimal       @db.Decimal(12, 2)
+  totalDeductions      Decimal       @db.Decimal(12, 2)
+  netSalary            Decimal       @db.Decimal(12, 2)
+  status               PayrollStatus @default(DRAFT)
+  paidAt               DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@unique([employeeId, month, year])
+}
+
+// System audit logs for tracking actions
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  entity      String
+  entityId    String
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}
