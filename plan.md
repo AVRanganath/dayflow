@@ -153,10 +153,11 @@ the people/agents.
 
 ## 7. Git workflow
 
-- Branch per session: `feat/sNN-<slug>` (e.g. `feat/s04-auth`).
+- Feature branch per session: `feat/sNN-<slug>` (e.g. `feat/s04-auth`).
 - **Conventional Commits**, short messages, scoped: `feat(auth): add signin endpoint`.
 - **No AI/agent co-author lines in commits.**
-- PRs into `main`, one session per PR, never force-push `main`.
+- **Never commit or merge to `main` directly.** Every session lands via a reviewed PR
+  from its feature branch — one session per PR, no force-pushes to `main`.
 
 ## 8. Environment variables
 

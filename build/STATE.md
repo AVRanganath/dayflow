@@ -15,34 +15,44 @@ Last updated: _initial scaffold_ · by: _setup_
 
 ## Progress board
 
-> **Claim a session before starting** (see SESSION_PROTOCOL §5): set Status → `WIP`,
-> put your name in **Owner** and your branch in **Branch**, and commit that one-line
-> change first so teammates see it. Never start a session someone already owns.
+> **Owners are pre-assigned below** — that is your claim. When you actually start a
+> session, flip its Status → `WIP` and fill **Branch** on your feature branch, and give
+> the team a heads-up. Everything reaches `main` **only via a reviewed PR** from a
+> `feat/sNN-<slug>` branch — never commit or merge to `main` directly.
+
+Owner is the **assigned** person (below); set Status → `WIP` when you actually start.
 
 | # | Session | Status | Owner | Branch | Depends on | Interfaces produced (fill on DONE) |
 |---|---------|--------|-------|--------|-----------|------------------------------------|
-| S00 | Bootstrap & tooling | TODO | — | — | — | root scripts, workspaces, docker-compose, `.env.example` |
-| S01 | Database (Prisma) | TODO | — | — | S00 | migration name, seed cmd, demo creds |
-| S02 | Shared package | TODO | — | — | S00 | exported Zod schemas + types + constants |
-| S03 | API core | TODO | — | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
-| S04 | Auth module | TODO | — | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
-| S05 | Employee & department | TODO | — | — | S03 | employee/department/company endpoints, loginId helper |
-| S06 | Attendance module | TODO | — | — | S03 | attendance endpoints, `workStatus` helper |
-| S07 | Leave module | TODO | — | — | S03 | leave endpoints, balance logic, allocations |
-| S08 | Payroll module | TODO | — | — | S03 | payroll endpoints, salary engine, payslip PDF |
-| S09 | Realtime + notifications + audit | TODO | — | — | S04–S08 | SSE endpoint, notify service, audit hook |
-| S10 | Web foundation | TODO | — | — | S02 | api client, auth context, layout, design tokens |
-| S11 | Auth pages | TODO | — | — | S10, S04 | `/signin`, onboarding, change-password |
-| S12 | Dashboards + analytics | TODO | — | — | S10, S06–S08 | `/dashboard` (both roles), charts |
-| S13 | Profile + directory | TODO | — | — | S10, S05 | `/profile`, `/employees` |
-| S14 | Attendance + leave pages | TODO | — | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
-| S15 | Payroll pages + reports | TODO | — | — | S10, S08 | `/payroll`, export |
-| S16 | Polish, tests, prod, demo | TODO | — | — | all | Dockerfiles, tests, README, demo script |
+| S00 | Bootstrap & tooling | TODO | Chandan | — | — | root scripts, workspaces, docker-compose, `.env.example` |
+| S01 | Database (Prisma) | TODO | Ranganath | — | S00 | migration name, seed cmd, demo creds |
+| S02 | Shared package | TODO | Chandan | — | S00 | exported Zod schemas + types + constants |
+| S03 | API core | TODO | Ranganath | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
+| S04 | Auth module | TODO | Chandan | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
+| S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
+| S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
+| S07 | Leave module | TODO | Ranganath | — | S03 | leave endpoints, balance logic, allocations |
+| S08 | Payroll module | TODO | Chandan | — | S03 | payroll endpoints, salary engine, payslip PDF |
+| S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
+| S10 | Web foundation | TODO | Pramith | — | S02 | api client, auth context, layout, design tokens |
+| S11 | Auth pages | TODO | Pramith | — | S10, S04 | `/signin`, onboarding, change-password |
+| S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
+| S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
+| S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
+| S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
+| S16 | Polish, tests, prod, demo | TODO | all four | — | all | Dockerfiles, tests, README, demo script |
 
-**Suggested 4-person tracks** (roles from `plan.md §4`): **P1** backend →
-S04→S07→S09 · **P2** backend → S05→S06→S08 · **P3** frontend → S11→S13 ·
-**P4** frontend → S12→S14→S15. S00 first (solo), then S01+S02, then S03+S10 unlock
-the two tracks. Everyone converges on S16.
+### Assignment & order (who does what, and the gate to start)
+- **Chandan** (backend): S00 → S02 → S04 → S06 → S08. *Runs S00 first, alone — everyone waits on it.*
+- **Ranganath** (backend): S01 → S03 → S05 → S07 → S09. *S09 is last (needs all of S04–S08).*
+- **Pramith** (frontend): S10 → S11 → S13. *S10 unlocks all frontend.*
+- **Mukunda** (frontend): S14 → S15 → S12. *Starts once S06/S07 land; pairs on S10 meanwhile.*
+- **All four**: S16 together at the end.
+
+**Wave order:** ① Chandan S00 (solo) → ② Ranganath S01 + Chandan S02 (parallel) →
+③ Ranganath S03 + Pramith S10 (parallel) → ④ backend fans out (Chandan S04/S06/S08,
+Ranganath S05/S07) while frontend follows each module (Pramith S11→S13, Mukunda
+S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
 ---
 

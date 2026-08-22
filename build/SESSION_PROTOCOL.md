@@ -89,9 +89,10 @@ you are handing off. Write it for a stranger — assume the next agent knows not
 git add -A
 git commit -m "feat(<scope>): <short summary>"   # Conventional Commits, no co-author
 ```
-Open a PR into `main` (or merge locally if that's the agreed flow). In your final
-chat message, post a **handoff summary**: what's done, what's now unblocked, and the
-exact next session to run. Then the chat ends.
+**Open a Pull Request from your feature branch into `main` — never commit or merge to
+`main` directly.** A teammate reviews and merges the PR. In your final chat message,
+post a **handoff summary**: what's done, what's now unblocked, and the exact next
+session to run. Then the chat ends.
 
 ---
 
@@ -129,7 +130,10 @@ note it in your log so it becomes durable.
 
 ## 3. Rules that keep the system consistent
 
-- **One session, one branch, one log, one PR.** Don't bundle two sessions.
+- **One session, one feature branch, one log, one PR.** Don't bundle two sessions.
+- **Never push or merge to `main` directly.** Every change reaches `main` only through
+  a reviewed PR from a feature branch (`feat/sNN-<slug>`). No direct commits, no
+  self-merges without review, no force-pushes to `main`.
 - **Never edit another session's `STATE.md` row.** Only your own (plus adding a note
   under "Blockers/notes" if you discovered something others need).
 - **Never delete a log.** Logs are append-only history.
@@ -150,16 +154,18 @@ The system is designed for it — follow these rules and 4 chats never collide.
 1. **Pick a runnable session.** In `build/STATE.md`, take a session that is `TODO`
    **and** whose "Depends on" are all `DONE`, **and** that `plan.md §5` marks
    parallelizable. If its deps aren't done, it's not ready — pick another.
-2. **Claim it before you start.** Set its Status → `WIP`, put your name in **Owner**
-   and your branch in **Branch**, and commit that one-line edit to `main` first. This
-   is the lock — teammates now see it's taken. (Two people editing different rows
-   won't conflict; if you push at the same moment, re-pull and re-add your row.)
+2. **Claim it before you start.** Owners are pre-assigned in `build/STATE.md`, so the
+   assignment is your claim. When you actually begin, flip your row's Status → `WIP`
+   (this rides along on your feature branch / PR) and give the team a quick heads-up so
+   nobody double-starts. Don't pick up a session assigned to someone else without
+   agreeing first.
 3. **Disjoint files only.** Parallel sessions must touch different folders (e.g. one
    person in `apps/api/src/modules/leave/`, another in `.../payroll/`). If your
    session needs to change a shared file another live session also touches, coordinate
    in person or serialize — don't both edit it.
-4. **One session → one branch → one PR.** Merge into `main` when acceptance criteria
-   pass. Because scopes are disjoint, merge order doesn't matter.
+4. **One session → one feature branch → one PR.** **Never commit or merge to `main`
+   directly** — every session lands via a reviewed PR from its feature branch. Because
+   scopes are disjoint, merge order doesn't matter.
 5. **The two bottlenecks.** `S00` gates everyone (run it solo first). Then `S01`+`S02`
    run together; `S03` unlocks the whole backend and `S10` unlocks the whole frontend.
    After S03 and S10 land, the feature sessions fan out with no further waiting.
