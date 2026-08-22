@@ -43,7 +43,10 @@ export function today(): Date {
  * @param employeeId - `Employee.id` (not `User.id`).
  * @param date - the day to evaluate; normalized to date-only. Defaults to today.
  */
-export async function computeWorkStatus(employeeId: string, date: Date = today()): Promise<WorkStatus> {
+export async function computeWorkStatus(
+  employeeId: string,
+  date: Date = today(),
+): Promise<WorkStatus> {
   const day = toDateOnly(date);
 
   const [attendance, approvedLeave] = await Promise.all([
