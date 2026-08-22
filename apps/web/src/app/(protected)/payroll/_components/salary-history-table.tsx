@@ -44,10 +44,7 @@ export function SalaryHistoryTable({
     setDownloadingMonth(item.month);
     try {
       const [y, m] = item.month.split('-').map((p) => Number(p));
-      const blob = await downloadPayslip(
-        employeeId,
-        y && m ? { month: m, year: y } : undefined,
-      );
+      const blob = await downloadPayslip(employeeId, y && m ? { month: m, year: y } : undefined);
       triggerBlobDownload(blob, `payslip-${item.month}.pdf`);
       toast.success('Payslip downloaded.');
     } catch (err) {
@@ -88,9 +85,7 @@ export function SalaryHistoryTable({
     {
       key: 'status',
       header: 'Status',
-      render: (item) => (
-        <StatusBadge status={item.status === 'PAID' ? 'PROCESSED' : item.status} />
-      ),
+      render: (item) => <StatusBadge status={item.status === 'PAID' ? 'PROCESSED' : item.status} />,
     },
     {
       key: 'payslip',

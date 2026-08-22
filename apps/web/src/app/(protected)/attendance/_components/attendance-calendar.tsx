@@ -76,9 +76,7 @@ export function AttendanceCalendar({ rows, isLoading = false }: AttendanceCalend
                 <div
                   key={key}
                   className={`min-h-[76px] rounded border p-1.5 ${
-                    isToday
-                      ? 'border-primary bg-primary-tint'
-                      : 'border-hairline bg-card'
+                    isToday ? 'border-primary bg-primary-tint' : 'border-hairline bg-card'
                   }`}
                 >
                   <div className="flex items-center justify-between">

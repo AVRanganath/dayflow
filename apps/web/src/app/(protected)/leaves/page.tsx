@@ -120,11 +120,7 @@ export default function LeavesPage() {
         <LeaveHistoryTable rows={leaves} isLoading={isLoading} />
       </div>
 
-      <ApplyLeaveModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onApplied={load}
-      />
+      <ApplyLeaveModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onApplied={load} />
     </div>
   );
 }

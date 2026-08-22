@@ -21,7 +21,15 @@ export interface SalaryInfoTabProps {
 }
 
 /** A component row where the amount may be unknown (renders an em dash). */
-function Row({ label, amount, emphasize = false }: { label: string; amount?: number; emphasize?: boolean }) {
+function Row({
+  label,
+  amount,
+  emphasize = false,
+}: {
+  label: string;
+  amount?: number;
+  emphasize?: boolean;
+}) {
   return (
     <div
       className={
@@ -75,7 +83,9 @@ export function SalaryInfoTab(_props: SalaryInfoTabProps) {
       {/* Net highlight bar */}
       <div className="flex items-center justify-between rounded border border-primary-tint-border bg-primary-tint px-5 py-4">
         <span className="text-sm font-bold text-sidebar">Net Salary</span>
-        <span className="font-display text-[22px] font-extrabold tracking-tight text-primary">—</span>
+        <span className="font-display text-[22px] font-extrabold tracking-tight text-primary">
+          —
+        </span>
       </div>
     </div>
   );

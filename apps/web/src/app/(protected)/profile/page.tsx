@@ -123,7 +123,9 @@ export default function ProfilePage() {
           onUploaded={handleUploaded}
         />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[22px] font-bold text-text-primary">{fullName(employee)}</h1>
+          <h1 className="font-display text-[22px] font-bold text-text-primary">
+            {fullName(employee)}
+          </h1>
           <p className="mt-0.5 text-sm text-text-secondary">{employee.designation ?? '—'}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
             {departmentName && <StatusBadge variant="info">{departmentName}</StatusBadge>}

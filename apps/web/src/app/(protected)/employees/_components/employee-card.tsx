@@ -26,7 +26,8 @@ const WORK_STATUS: Record<WorkStatus, { icon: string; label: string }> = {
  */
 export function EmployeeCard({ employee, departments }: EmployeeCardProps) {
   const departmentName =
-    (employee.departmentId && departments.find((d) => d.id === employee.departmentId)?.name) || null;
+    (employee.departmentId && departments.find((d) => d.id === employee.departmentId)?.name) ||
+    null;
   const status = WORK_STATUS[employee.workStatus];
 
   return (

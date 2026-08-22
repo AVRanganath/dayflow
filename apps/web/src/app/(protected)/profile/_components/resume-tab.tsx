@@ -46,7 +46,10 @@ export function ResumeTab({ employee, onSaved }: ResumeTabProps) {
       certifications: toList(certifications),
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? 'Please check the Resume fields', 'Invalid input');
+      toast.error(
+        parsed.error.issues[0]?.message ?? 'Please check the Resume fields',
+        'Invalid input',
+      );
       return;
     }
 
@@ -102,7 +105,12 @@ export function ResumeTab({ employee, onSaved }: ResumeTabProps) {
       />
 
       <div className="mt-1">
-        <Button variant="primary" onClick={handleSave} isLoading={saving} leftIcon={<Save className="h-4 w-4" />}>
+        <Button
+          variant="primary"
+          onClick={handleSave}
+          isLoading={saving}
+          leftIcon={<Save className="h-4 w-4" />}
+        >
           Save Changes
         </Button>
       </div>

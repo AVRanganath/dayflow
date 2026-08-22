@@ -35,7 +35,9 @@ export function EmployeeTable({ employees, departments, isLoading }: EmployeeTab
         <div className="flex min-w-0 items-center gap-3">
           <Avatar name={fullName(e)} src={e.profilePicture} size="sm" />
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold text-text-primary">{fullName(e)}</div>
+            <div className="truncate text-[13px] font-semibold text-text-primary">
+              {fullName(e)}
+            </div>
             <div className="truncate text-xs text-text-secondary">{e.email}</div>
           </div>
         </div>
@@ -51,7 +53,11 @@ export function EmployeeTable({ employees, departments, isLoading }: EmployeeTab
       header: 'Department',
       render: (e) => {
         const name = deptName(e.departmentId);
-        return name ? <StatusBadge variant="info">{name}</StatusBadge> : <span className="text-text-muted">—</span>;
+        return name ? (
+          <StatusBadge variant="info">{name}</StatusBadge>
+        ) : (
+          <span className="text-text-muted">—</span>
+        );
       },
     },
     {
