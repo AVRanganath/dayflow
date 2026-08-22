@@ -14,6 +14,7 @@ import { sendSuccess } from '../../lib/http.js';
 import { UnauthorizedError } from '../../lib/errors.js';
 import type { AuthUser } from '../../middleware/auth.js';
 import { resolveProfilePictureUrl, type ProfilePictureUrlInput } from '../../lib/upload.js';
+import { requestContext, writeAudit } from '../audit/audit.service.js';
 import * as employeeService from './employee.service.js';
 
 /** Assert `req.user` is present (set by `requireAuth`) and return it. */
@@ -72,6 +73,17 @@ export async function updateById(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string;
   const body = req.body as AdminUpdateEmployeeInput;
   const data = await employeeService.updateByIdAdmin(id, body);
+  // S09 audit (differentiator #3): an admin editing someone else's record is a
+  // sensitive mutation. `newValues` is the submitted patch — the pre-image is not
+  // read back, since the service returns only the updated row.
+  void writeAudit({
+    userId: requireUser(req).id,
+    action: 'EMPLOYEE_UPDATED',
+    entity: 'Employee',
+    entityId: id,
+    newValues: body,
+    ...requestContext(req),
+  });
   sendSuccess(res, data);
 }
 
