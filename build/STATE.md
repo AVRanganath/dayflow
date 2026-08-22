@@ -38,7 +38,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
 | S13 | Profile + directory | DONE | Pramith | feat/s13-profile-directory | S10, S05 | `/profile`, `/employees`, `/employees/:id` (view-only); `lib/employees.ts` fetchers (see detail) |
-| S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
+| S14 | Attendance + leave pages | DONE | Mukunda | feat/s14-attendance-leave | S10, S06, S07 | `/attendance`, `/leaves`, `/leaves/approvals` pages; attendance/leaves api helpers; CSV export; NO SSE (S09 TODO) |
 | S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
 | S16 | Polish, tests, prod, demo | TODO | all four | — | all | Dockerfiles, tests, README, demo script |
 
@@ -61,6 +61,58 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
 
+### S14 — Attendance & Leave pages (DONE)
+- **Routes added** (under `apps/web/src/app/(protected)/` — the S10 route group is
+  `(protected)`, not the session file's aspirational `(app)`):
+  - `/attendance` (`attendance/page.tsx`) — check-in/out (green→red), status line,
+    hours-worked progress bar, Daily/Weekly/Monthly toggle, summary bar, and the
+    ADMIN/HR all-employees table with CSV export. Sub-components in
+    `attendance/_components/`: `attendance-calendar.tsx` (monthly grid, ADR-005 dots +
+    legend), `attendance-weekly.tsx` (Day|Date|In|Out|Hours|Status + totals),
+    `attendance-list.tsx` (ADR-019 day-wise: Date|Check In|Check Out|Work Hours|Extra
+    Hours|Break), `attendance-summary.tsx` (Present/Absent/Half-days/Leaves/Total Hours),
+    `admin-attendance-table.tsx` (employee selector + CSV), `attendance-status.ts`
+    (shared status→colour/label map + `formatTime`).
+  - `/leaves` (`leaves/page.tsx`) — balance cards (ADR-004: Paid teal, Sick amber,
+    Casual green, Unpaid ∞ gray), Apply button, history table.
+    `leaves/_components/`: `apply-leave-modal.tsx` (auto Total Days weekends-skipped,
+    Zod `ApplyLeaveSchema`, attachment upload ADR-018), `leave-history-table.tsx`
+    (expandable rows → reviewer comment, Status+Year filters, client pagination).
+  - `/leaves/approvals` (`leaves/approvals/page.tsx`) — **ADMIN/HR only**, employees
+    redirected to `/dashboard`; stats bar, filter/sort bar, request cards, Allocate
+    Leave (ADR-018). `approvals/_components/`: `leave-request-card.tsx` (avatar,
+    type badge, range+days, expandable reason, Approve green/Reject red with comment;
+    reject reason required via `RejectLeaveSchema`), `allocation-modal.tsx`
+    (`POST /leaves/allocations`), `empty-state.tsx` (wraps S10 EmptyState).
+- **API helpers (`apps/web/src/lib/api/`):**
+  - `attendance.ts` — `checkIn(location?)`, `checkOut(breakMinutes?)`,
+    `getMyAttendance(range='monthly', cursor?)`, `getAllAttendance(filters)` +
+    `MyAttendanceRow`/`AdminAttendanceRow`/`CheckInResult`/`CheckOutResult` types.
+  - `leaves.ts` — `applyLeave(fields)` (multipart when `file` present, else JSON with
+    optional `attachmentUrl`), `getMyLeaves`, `getAllLeaves(status?)`, `approveLeave`,
+    `rejectLeave`, `getMyBalance`, `allocateLeave`, `getEmployeeOptions`,
+    `getDepartments` + `MyLeaveRow`/`AdminLeaveRow`/`LeaveBalanceSummary` types.
+    **IMPORTANT for S12/S15: the leave API field is `leaveType` (not `type`),
+    `totalDays` is a Decimal serialised as a STRING, and the single reviewer field is
+    `reviewerComment` (there is no separate `rejectionReason`/`reviewNotes`). The admin
+    leave row's `employee` carries only `{ firstName, lastName }` — no department, so
+    department is mapped client-side via `GET /employees`.** Attendance `hoursWorked`/
+    `extraHours`/`breakMinutes` can be `null`.
+  - `raw.ts` — `getWithMeta<T>(path, params?)`: an envelope-aware GET returning
+    `{ data, meta }` (the S10 `api` client discards `meta`, losing the cursor). Reuse
+    for any paginated list. Handles Bearer + single-flight refresh like the client.
+- **Utils (`apps/web/src/lib/`):** `csv.ts` (`toCsv(rows, columns)` + `downloadCsv`),
+  `working-days.ts` (`countWorkingDays(start,end)` — UTC, inclusive, skips Sat/Sun,
+  mirrors S07's server rule; server count is authoritative on the response).
+- **SSE:** NOT wired — S09 is still `TODO`, so all pages reflect on refresh. When S09
+  lands, add `apps/web/src/lib/realtime.ts` (SSE over `GET /api/v1/events`) and have the
+  approvals + history/balance views subscribe (see S14 log for the seams).
+- **No `@dayflow/shared` schema changes.** Used existing `ApplyLeaveSchema`,
+  `RejectLeaveSchema`, `AllocateLeaveSchema` (field `type`, optional `year`), `API_ROUTES`.
+- **Role gates (ADR-001):** the Sidebar already role-filters nav (`/leaves` for
+  employees, `/leaves/approvals` for ADMIN/HR); `/leaves/approvals` also redirects
+  employees to `/dashboard` at the route, and the admin attendance table is hidden from
+  employees. API remains the final gate.
 ### S13 — Profile & Employee Directory (DONE)
 - **Routes added** (all under `apps/web/src/app/(protected)/` — the real S10 route
   group; the session file's `app/(app)/` path was aspirational):
@@ -541,6 +593,15 @@ never redefine. Files under `packages/shared/src/`:
   `npm run db:generate` (and `db:migrate`) as its first steps.
 - **`.md` files are Prettier-ignored** (`.prettierignore`) — hand-aligned tables.
   Prettier governs code only; don't reformat the docs.
+- **S14 (frontend infra, affects S11/S12/S13/S15):** `@dayflow/shared` exports its ESM
+  **source** (`./src/index.ts`) which uses explicit `.js` import specifiers that resolve
+  to `.ts` files. S10 only imported *types* from shared, so this never surfaced. The
+  moment you import a **runtime value** (a Zod schema, `API_ROUTES`, an enum array) from
+  `@dayflow/shared` in `apps/web`, `next build` fails with `Module not found: Can't
+  resolve './xxx.schema.js'`. Fix already applied in `apps/web/next.config.mjs` — a
+  webpack `resolve.extensionAlias` mapping `.js → [.ts,.tsx,.js,.jsx]`. Keep it; it
+  unblocks every frontend session that needs shared schemas/constants at runtime. (Dev
+  mode / tsx were already fine; only the webpack production build needed it.)
 - **S07:** the shared local Postgres had no migrations applied yet when this session
   started (`Company` table didn't exist) despite being reported healthy — ran
   `npm run db:deploy -w @dayflow/db` (`prisma migrate deploy`, safe/non-interactive)
