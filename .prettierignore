@@ -14,3 +14,6 @@ packages/db/prisma/generated/
 
 # Lockfile
 package-lock.json
+
+# Design-handoff prototypes (vanilla browser HTML/JS) — reference artifacts, not app code.
+UI/

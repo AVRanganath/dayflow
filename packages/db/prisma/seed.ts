@@ -1,4 +1,15 @@
-import { PrismaClient, Role, Gender, EmploymentType, AttendanceStatus, LeaveType, LeaveStatus, PayrollStatus, MaritalStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  Role,
+  Gender,
+  EmploymentType,
+  AttendanceStatus,
+  LeaveType,
+  LeaveStatus,
+  PayrollStatus,
+  MaritalStatus,
+} from '@prisma/client';
+import type { Department, Employee } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -19,10 +30,74 @@ function randomBoolean(chance: number = 0.5) {
   return random() < chance;
 }
 
-const firstNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Heidi', 'Ivan', 'Judy', 'Mallory', 'Nina', 'Oscar', 'Peggy', 'Romeo', 'Sybil', 'Trent', 'Victor', 'Walter', 'Alice', 'Bruce', 'Clark', 'Diana', 'Barry', 'Hal', 'Arthur', 'Oliver', 'Dinah'];
-const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez'];
+const firstNames = [
+  'Alice',
+  'Bob',
+  'Charlie',
+  'Diana',
+  'Eve',
+  'Frank',
+  'Grace',
+  'Heidi',
+  'Ivan',
+  'Judy',
+  'Mallory',
+  'Nina',
+  'Oscar',
+  'Peggy',
+  'Romeo',
+  'Sybil',
+  'Trent',
+  'Victor',
+  'Walter',
+  'Alice',
+  'Bruce',
+  'Clark',
+  'Diana',
+  'Barry',
+  'Hal',
+  'Arthur',
+  'Oliver',
+  'Dinah',
+];
+const lastNames = [
+  'Smith',
+  'Johnson',
+  'Williams',
+  'Brown',
+  'Jones',
+  'Garcia',
+  'Miller',
+  'Davis',
+  'Rodriguez',
+  'Martinez',
+  'Hernandez',
+  'Lopez',
+  'Gonzalez',
+  'Wilson',
+  'Anderson',
+  'Thomas',
+  'Taylor',
+  'Moore',
+  'Jackson',
+  'Martin',
+  'Lee',
+  'Perez',
+  'Thompson',
+  'White',
+  'Harris',
+  'Sanchez',
+  'Clark',
+  'Ramirez',
+];
 
-function generateLoginId(prefix: string, first: string, last: string, year: number, serial: number) {
+function generateLoginId(
+  prefix: string,
+  first: string,
+  last: string,
+  year: number,
+  serial: number,
+) {
   const f = first.substring(0, 2).toUpperCase().padEnd(2, 'X');
   const l = last.substring(0, 2).toUpperCase().padEnd(2, 'X');
   const s = serial.toString().padStart(4, '0');
@@ -49,20 +124,22 @@ async function main() {
         hraPct: 50,
         performanceBonusPct: 8.33,
         ltaPct: 8.33,
-        standardAllowance: 4167
-      }
-    }
+        standardAllowance: 4167,
+      },
+    },
   });
 
   // 2. Departments
   const deptNames = ['Engineering', 'Product', 'Sales', 'HR', 'Finance'];
-  const depts: any[] = [];
+  const depts: Department[] = [];
   for (const name of deptNames) {
-    depts.push(await prisma.department.upsert({
-      where: { name },
-      update: {},
-      create: { name, description: `${name} department` }
-    }));
+    depts.push(
+      await prisma.department.upsert({
+        where: { name },
+        update: {},
+        create: { name, description: `${name} department` },
+      }),
+    );
   }
 
   // Passwords
@@ -70,7 +147,7 @@ async function main() {
   const passwordEmployee = await bcrypt.hash('Employee@123', 10);
 
   const currentYear = new Date().getFullYear();
-  let serialsByYear: Record<number, number> = {};
+  const serialsByYear: Record<number, number> = {};
 
   // We will generate 30 employees total.
   // 1: Admin, 2: John, 3-30: others
@@ -102,7 +179,13 @@ async function main() {
     const joinYear = currentYear - randomInt(0, 3);
     if (!serialsByYear[joinYear]) serialsByYear[joinYear] = 0;
     serialsByYear[joinYear]++;
-    const loginId = generateLoginId(company.loginIdPrefix, firstName, lastName, joinYear, serialsByYear[joinYear]);
+    const loginId = generateLoginId(
+      company.loginIdPrefix,
+      firstName,
+      lastName,
+      joinYear,
+      serialsByYear[joinYear],
+    );
 
     return {
       index: i,
@@ -120,11 +203,11 @@ async function main() {
     };
   });
 
-  const createdEmployees: any[] = [];
+  const createdEmployees: Employee[] = [];
   const today = new Date();
-  
+
   for (const ed of employeesData) {
-    const dept = depts.find(d => d.name === ed.deptName);
+    const dept = depts.find((d) => d.name === ed.deptName);
     const joinDate = new Date(`${ed.joinYear}-01-15T00:00:00Z`);
     const dateOfBirth = new Date(`${ed.joinYear - randomInt(22, 40)}-06-01T00:00:00Z`);
 
@@ -138,7 +221,7 @@ async function main() {
         role: ed.role,
         mustChangePassword: false,
         isEmailVerified: true,
-      }
+      },
     });
 
     const empIdStr = `EMP${(ed.index + 1).toString().padStart(3, '0')}`;
@@ -165,23 +248,29 @@ async function main() {
         bankName: 'HDFC Bank',
         bankIfsc: 'HDFC0001234',
         departmentId: dept.id,
-        designation: ed.role === Role.ADMIN ? 'Director' : (ed.role === Role.HR ? 'HR Manager' : 'Software Engineer'),
+        designation:
+          ed.role === Role.ADMIN
+            ? 'Director'
+            : ed.role === Role.HR
+              ? 'HR Manager'
+              : 'Software Engineer',
         dateOfJoining: joinDate,
         employmentType: ed.employmentType,
-        workingDaysPerWeek: 5
-      }
+        workingDaysPerWeek: 5,
+      },
     });
     createdEmployees.push(employee);
 
     // Salary Structure
-    const wageNum = ed.role === Role.ADMIN ? 150000 : (ed.role === Role.HR ? 80000 : randomInt(40000, 100000));
+    const wageNum =
+      ed.role === Role.ADMIN ? 150000 : ed.role === Role.HR ? 80000 : randomInt(40000, 100000);
     const basicNum = wageNum * 0.5;
     const hraNum = basicNum * 0.5;
     const perfNum = basicNum * 0.0833;
     const ltaNum = basicNum * 0.0833;
     const stdNum = 4167;
     const fixedNum = wageNum - (basicNum + hraNum + stdNum + perfNum + ltaNum);
-    
+
     await prisma.salaryStructure.upsert({
       where: { employeeId: employee.id },
       update: {},
@@ -196,23 +285,29 @@ async function main() {
         fixedAllowance: fixedNum,
         pfEmployeePct: 12,
         pfEmployerPct: 12,
-        professionalTax: 200
-      }
+        professionalTax: 200,
+      },
     });
 
     // Leave Balances
     const currentYear = today.getFullYear();
-    for (const [lt, allowed] of [[LeaveType.PAID, 24], [LeaveType.SICK, 12], [LeaveType.CASUAL, 8]] as [LeaveType, number][]) {
+    for (const [lt, allowed] of [
+      [LeaveType.PAID, 24],
+      [LeaveType.SICK, 12],
+      [LeaveType.CASUAL, 8],
+    ] as [LeaveType, number][]) {
       await prisma.leaveBalance.upsert({
-        where: { employeeId_leaveType_year: { employeeId: employee.id, leaveType: lt, year: currentYear } },
+        where: {
+          employeeId_leaveType_year: { employeeId: employee.id, leaveType: lt, year: currentYear },
+        },
         update: {},
         create: {
           employeeId: employee.id,
           leaveType: lt,
           year: currentYear,
           totalAllowed: allowed,
-          used: randomInt(0, Math.floor(allowed / 3))
-        }
+          used: randomInt(0, Math.floor(allowed / 3)),
+        },
       });
     }
 
@@ -221,23 +316,23 @@ async function main() {
       const monthDate = new Date(today.getFullYear(), today.getMonth() - m, 1);
       const year = monthDate.getFullYear();
       const month = monthDate.getMonth() + 1; // 1-12
-      
+
       let workingDays = 0;
       let missingAttendanceDays = 0;
-      let unpaidLeaveDays = 0;
+      const unpaidLeaveDays = 0;
 
       const daysInMonth = new Date(year, month, 0).getDate();
-      
+
       for (let d = 1; d <= daysInMonth; d++) {
         const currentDate = new Date(Date.UTC(year, month - 1, d));
         const dayOfWeek = currentDate.getUTCDay();
         if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
         workingDays++;
-        
+
         // Randomly assign attendance
         let status = AttendanceStatus.PRESENT;
         let hoursWorked = 8;
-        
+
         const rand = random();
         if (rand < 0.05) {
           status = AttendanceStatus.ABSENT;
@@ -268,14 +363,14 @@ async function main() {
             checkIn,
             checkOut,
             hoursWorked,
-            breakMinutes: hoursWorked > 4 ? 60 : 0
-          }
+            breakMinutes: hoursWorked > 4 ? 60 : 0,
+          },
         });
       }
 
       // Generate a Payroll Record for this month
       const payableDays = workingDays - missingAttendanceDays - unpaidLeaveDays;
-      const netMonthly = wageNum - (basicNum * 0.12) - 200;
+      const netMonthly = wageNum - basicNum * 0.12 - 200;
       const proratedNet = Math.round((netMonthly * payableDays) / workingDays);
 
       await prisma.payrollRecord.upsert({
@@ -296,13 +391,13 @@ async function main() {
           pfEmployee: basicNum * 0.12,
           pfEmployer: basicNum * 0.12,
           professionalTax: 200,
-          totalDeductions: (basicNum * 0.12) + 200,
+          totalDeductions: basicNum * 0.12 + 200,
           workingDays,
           payableDays,
           netSalary: proratedNet,
           status: PayrollStatus.PAID,
-          paidAt: new Date(Date.UTC(year, month - 1, daysInMonth, 23, 59, 59))
-        }
+          paidAt: new Date(Date.UTC(year, month - 1, daysInMonth, 23, 59, 59)),
+        },
       });
     }
   }
@@ -312,7 +407,7 @@ async function main() {
     const mgrId = randomBoolean(0.7) ? createdEmployees[1].id : createdEmployees[0].id;
     await prisma.employee.update({
       where: { id: createdEmployees[i].id },
-      data: { managerId: mgrId }
+      data: { managerId: mgrId },
     });
   }
 
@@ -330,12 +425,33 @@ async function main() {
     return Math.max(1, days);
   };
   const leaveSpecs = [
-    { status: LeaveStatus.APPROVED, type: LeaveType.PAID, monthOffset: -1, startDay: 10, len: 2,
-      reason: 'Family function to attend out of town.', comment: 'Approved. Enjoy your time off!' },
-    { status: LeaveStatus.PENDING, type: LeaveType.SICK, monthOffset: 0, startDay: 22, len: 1,
-      reason: 'Feeling unwell, need a day to recover.', comment: null },
-    { status: LeaveStatus.REJECTED, type: LeaveType.CASUAL, monthOffset: -2, startDay: 5, len: 3,
-      reason: 'Short-notice personal trip request.', comment: 'Insufficient coverage for those dates.' },
+    {
+      status: LeaveStatus.APPROVED,
+      type: LeaveType.PAID,
+      monthOffset: -1,
+      startDay: 10,
+      len: 2,
+      reason: 'Family function to attend out of town.',
+      comment: 'Approved. Enjoy your time off!',
+    },
+    {
+      status: LeaveStatus.PENDING,
+      type: LeaveType.SICK,
+      monthOffset: 0,
+      startDay: 22,
+      len: 1,
+      reason: 'Feeling unwell, need a day to recover.',
+      comment: null,
+    },
+    {
+      status: LeaveStatus.REJECTED,
+      type: LeaveType.CASUAL,
+      monthOffset: -2,
+      startDay: 5,
+      len: 3,
+      reason: 'Short-notice personal trip request.',
+      comment: 'Insufficient coverage for those dates.',
+    },
   ];
   for (let i = 1; i < createdEmployees.length; i++) {
     const emp = createdEmployees[i];
@@ -344,7 +460,9 @@ async function main() {
       const s = leaveSpecs[n];
       const base = new Date(today.getFullYear(), today.getMonth() + s.monthOffset, s.startDay);
       const start = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
-      const end = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + s.len - 1));
+      const end = new Date(
+        Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + s.len - 1),
+      );
       const reviewed = s.status !== LeaveStatus.PENDING;
       await prisma.leaveRequest.upsert({
         where: { id: `seed-leave-${emp.id}-${n}` },
@@ -361,9 +479,12 @@ async function main() {
           reviewedById: reviewed ? reviewer.id : null,
           reviewerComment: s.comment,
           reviewedAt: reviewed
-            ? new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() - 3))
+            ? new Date(
+                Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() - 3),
+              )
             : null,
-          attachmentUrl: s.type === LeaveType.SICK ? 'https://files.dayflow.local/certs/sick-note.pdf' : null,
+          attachmentUrl:
+            s.type === LeaveType.SICK ? 'https://files.dayflow.local/certs/sick-note.pdf' : null,
         },
       });
     }
@@ -380,8 +501,8 @@ async function main() {
       entity: 'Company',
       entityId: company.id,
       ipAddress: '127.0.0.1',
-      userAgent: 'Seed Script'
-    }
+      userAgent: 'Seed Script',
+    },
   });
 
   console.log('Seed completed successfully.');
