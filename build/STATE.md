@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: 2026-08-22 · by: Mukunda (S03)
+Last updated: 2026-08-22 · by: Chandan (S08)
 
 ---
 
@@ -29,10 +29,10 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S02 | Shared package | DONE | Chandan | feat/s02-shared | S00 | Zod schemas + `z.infer` types + enums/routes/envelope (see detail) |
 | S03 | API core | DONE | Mukunda | feat/s03-api-core | S01, S02 | app bootstrap, middleware, `AppError`, `/health` (see detail) |
 | S04 | Auth module | DONE | Pramith | feat/s04-auth | S03 | auth endpoints, `requireAuth`/`requireRole`, JWT+bcrypt, refresh cookie (see detail) |
-| S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
-| S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
-| S07 | Leave module | TODO | Ranganath | — | S03 | leave endpoints, balance logic, allocations |
-| S08 | Payroll module | TODO | Chandan | — | S03 | payroll endpoints, salary engine, payslip PDF |
+| S05 | Employee & department | DONE | Chandan | feat/s05-employee | S03 | employee/department/company endpoints, `generateLoginId`, `computeWorkStatus`, row-level guard (see detail) |
+| S06 | Attendance module | DONE | Pramith | feat/s06-attendance | S03 | 5 attendance endpoints, exported `computeWorkStatus` helper (see detail) |
+| S07 | Leave module | DONE | Ranganath | feat/s07-leave | S03 | leave endpoints, balance logic, allocations (see detail) |
+| S08 | Payroll module | DONE | Chandan | feat/s08-payroll | S03 | payroll endpoints, salary engine, payslip PDF (see detail) |
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
 | S11 | Auth pages | TODO | Pramith | — | S10, S04 | `/signin`, onboarding, change-password |
@@ -61,6 +61,96 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
 
+### S05 — Employee & Department (DONE)
+- **Routers mounted** in `apps/api/src/routes/index.ts`: `/employees`, `/departments`,
+  `/company`. All routes behind `requireAuth`; management routes add
+  `requireRole('ADMIN','HR')`, company update adds `requireRole('ADMIN')`.
+- **Endpoints (base `/api/v1`):**
+  - `POST /employees` (ADMIN/HR, ADR-012) — body `CreateEmployeeSchema`. Auto-mints
+    `loginId` + temp password + `employeeId`/`employeeCode` (`EMP0001`…), creates
+    `User`+`Employee`+default `LeaveBalance` (PAID 24/SICK 7/CASUAL 7) in ONE
+    transaction. `201` → `{ id (employeeId), firstName, lastName, email, loginId, role,
+    temporaryPassword, mustChangePassword:true }`. `temporaryPassword` is returned
+    **once here only**.
+  - `GET /employees` (ADMIN/HR) — query `EmployeeListQuerySchema` + `PaginationQuerySchema`
+    (`cursor`, `limit` default 20). `search` = case-insensitive over firstName/lastName/
+    email; AND-combined with `departmentId`/`employmentType`/`role` filters. Each row
+    carries computed `workStatus` (ADR-017). Envelope `meta:{ nextCursor, limit }`.
+  - `GET /employees/me` (any auth) — caller's own `Employee` (resolved from
+    `req.user.id` = User id → `Employee.userId`), incl. `workStatus`, `user.loginId/role/
+    mustChangePassword`.
+  - `PUT /employees/me` (any auth) — restricted self-update; body `UpdateProfileSchema`
+    (`.strict()`, self-editable subset only: phone, personalEmail, address, city, state,
+    country, zipCode, profilePicture, resume fields about/whatILove/hobbies/skills/
+    certifications). Any other key → 400 `VALIDATION_ERROR`.
+  - `GET /employees/:id` — ADMIN/HR **or self**; row-level enforced in service via
+    `assertCanAccessEmployee` (EMPLOYEE reading another id → `403 FORBIDDEN`).
+  - `PUT /employees/:id` (ADMIN/HR) — body `AdminUpdateEmployeeSchema` (full ADR-015
+    set incl. `managerId`). Validates `managerId`/`departmentId` exist; rejects
+    self-referential `managerId` → 400.
+  - `PATCH /employees/:id/profile-picture` — ADMIN/HR or self. **Accepts JSON `{ url }`**
+    (multipart storage stubbed, see log/upload.ts); returns `{ profilePictureUrl }`.
+  - `GET /departments` (any auth) → `[{ id, name, description }]`, sorted by name.
+  - `GET /company` (any auth) → full `Company` row (`id, name, logoUrl, loginIdPrefix,
+    settings, createdAt, updatedAt`).
+  - `PUT /company` (**ADMIN-only**) — body `UpdateCompanySchema`. `settings` is
+    **shallow-merged** onto existing settings (partial patch keeps other keys).
+- **Helpers (in `apps/api/src/lib/`, reusable by other sessions):**
+  - `login-id.ts`: `generateLoginId(prefix, firstName, lastName, joinYear, serial)` (pure,
+    unit-tested, `OIJODO20220001`) + `generateTempPassword(length=12)`.
+  - `work-status.ts`: `computeWorkStatus(employeeId)` / `computeWorkStatuses(ids[])`
+    (batched, no N+1) + `todayRange()`. PRESENT = attendance today with checkIn;
+    ON_LEAVE = approved leave covering today; else ABSENT. **S06 may replace with its
+    canonical helper** (imported here as a local minimal version, ADR-017).
+  - `password.ts`: `hashPassword(plain)` (bcryptjs, 10 rounds) — S04 may fold into its own.
+  - `pagination.ts`: `cursorArgs(limit, cursor?)` + `buildPage(rows, limit)` (id-based
+    cursor, fetches limit+1, stable `orderBy:{ id:'asc' }`).
+  - `http.ts`: `sendSuccess(res, data, status?, meta?)` + `asyncHandler(fn)` (Express-4
+    async error forwarding). `validate.ts`: `validate(schema, 'body'|'query'|'params')`.
+  - `upload.ts`: `ProfilePictureUrlSchema` + `resolveProfilePictureUrl` (URL stub).
+- **Row-level rule:** `assertCanAccessEmployee(reqUser, targetEmployeeId)` — ADMIN/HR pass
+  for any id; EMPLOYEE only for their own (resolved via userId→employeeId). Reused by
+  `getById` and the self-scoped profile-picture path.
+- **Notes for S12/S13:** the auth principal is `{ id: <User.id>, role }` — the employee id
+  is looked up server-side, never sent by the client. `passwordHash` is never selected/
+  returned. New dep added to `apps/api`: `bcryptjs` (^3.0.3, ships own types).
+- **Testing caveat:** protected routes could not be curl-tested at runtime — S04's
+  `requireAuth`/`requireRole` are still stubs that throw. Service logic was verified via a
+  throwaway tsx script against the seeded DB (all criteria pass at the service layer).
+### S06 — Attendance module (DONE)
+Files under `apps/api/src/modules/attendance/` (layered route→controller→service→prisma):
+- **Endpoints** (mounted at `/api/v1/attendance` via `router.use('/attendance', attendanceRouter)`):
+  - `POST /check-in` (EMPLOYEE) → `201 { id, checkInTime, status:'PRESENT', workStatus:'PRESENT' }`.
+    Second check-in same day → **`409 CONFLICT`** (detail `code:'ALREADY_CHECKED_IN'`) via the
+    `@@unique([employeeId,date])` guard.
+  - `POST /check-out` (EMPLOYEE), body `CheckOutSchema` (`breakMinutes?`) →
+    `200 { id, checkOutTime, breakMinutes, hoursWorked, extraHours }`. No check-in today → **404**;
+    already checked out → **`409`** (detail `code:'ALREADY_CHECKED_OUT'`).
+  - `GET /me` (EMPLOYEE), query `{ range: daily|weekly|monthly (default monthly), cursor?, limit? }` →
+    `200 data:[{ id,date,checkInTime,checkOutTime,breakMinutes,hoursWorked,extraHours,status }]`,
+    `meta:{ nextCursor, limit }`.
+  - `GET /` (ADMIN/HR), query `AttendanceListQuerySchema` (`date?`,`departmentId?`,`status?`) + `cursor?`,`limit?`
+    → rows also carry `employeeId` + `employee:{ name, departmentId }`; `meta` cursor.
+  - `GET /summary` (ADMIN/HR), query `{ date? (YYYY-MM-DD, default today) }` →
+    `200 { totalEmployees, present, absent, onLeave }`.
+- **Hours math (ADR-019):** `hoursWorked = round2((checkOut−checkIn) − breakMinutes/60)` (≥0),
+  `extraHours = max(0, hoursWorked − 8)`. **Standard workday = 8h.** Stored `Decimal(5,2)`.
+- **Range windows** (UTC, date-only, inclusive, ending today): `daily`=today; `weekly`=last 7 days
+  (today−6…today); `monthly` (**default**)=1st-of-current-month…today, day-wise.
+- **Summary rule** (S12 must match): `totalEmployees`=active employees (`User.isActive`);
+  `present`=rows that day with `PRESENT`|`HALF_DAY`; `onLeave`=`ON_LEAVE` rows;
+  `absent`=`max(0, total−present−onLeave)`. Invariant: `present+absent+onLeave === totalEmployees`.
+- **Exported `workStatus` helper (ADR-017), for S05/S12/S13:**
+  `computeWorkStatus(employeeId: string, date?: Date): Promise<'PRESENT'|'ABSENT'|'ON_LEAVE'>`
+  **Import path:** `import { computeWorkStatus } from '../attendance/work-status.js'` (adjust the
+  relative prefix from your module; also re-exported by `attendance.service.js`).
+  `work-status.ts` also exports `today()` and `toDateOnly(date)` UTC-midnight helpers and the
+  `WorkStatus` type. Rule: `ON_LEAVE` if attendance row `ON_LEAVE` or an APPROVED `LeaveRequest`
+  spans the date; `PRESENT` if row `PRESENT`/`HALF_DAY` or has `checkIn`; else `ABSENT`.
+- **Note:** `req.user` = `{ id (User.id), role }` — employee routes map to `Employee.id` via
+  `resolveEmployeeId(userId)`. Runtime protected-route testing is blocked until S04 fills the
+  `requireAuth`/`requireRole` stubs. S03's referenced shared `validate`/`sendSuccess` helpers were
+  not committed, so a local `attendance.http.ts` provides them (swap to shared when they land).
 ### S04 — Auth (DONE)
 - **Endpoints** (all under `/api/v1/auth`, tighter rate limit 10 req/60s per IP):
   `POST /signup` (company/admin onboarding, ADR-012 — 201, gated on `count(ADMIN)===0`
@@ -142,6 +232,149 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
   placeholder `index.ts`, which is deleted).
 - Unblocks S04–S08 (all can now build feature routers/services against real
   `AppError`, `requireAuth`/`requireRole` stubs, `prisma`, `redis`, `logger`).
+
+### S08 — Payroll module (DONE)
+- **Owns:** `apps/api/src/modules/payroll/` (`payroll.routes.ts`, `payroll.controller.ts`,
+  `payroll.service.ts`, `payroll.calc.ts`, `payslip.pdf.ts`, `payroll.schema.ts`).
+  Mounted at `/api/v1/payroll` via one edit to the S03-owned `apps/api/src/routes/index.ts`
+  (`router.use('/payroll', payrollRouter)`, replacing its TODO(S08) line).
+- **Routes:**
+  - `GET /payroll/me` — any authenticated role, read-only. Caller's own ADR-013
+    component breakdown (`currency, monthlyWage, earnings{basic,hra,standardAllowance,
+    performanceBonus,lta,fixedAllowance,gross}, deductions{pfEmployee,professionalTax,
+    total}, employerContributions{pfEmployer}, monthlyNet, history[]` — history newest
+    first, each with `month ("YYYY-MM"), payableDays, workingDays, netSalary, status,
+    payslipUrl`). No write path.
+  - `GET /payroll` — ADMIN/HR only. `?month=&year=` filter + cursor pagination
+    (`cursor`/`limit`, reusing `@dayflow/shared`'s `PayrollListQuerySchema` merged with
+    `PaginationQuerySchema` — no shared-contract change needed, both already existed).
+  - `GET /payroll/:id/payslip` — owner or ADMIN/HR (row-level ownership check in the
+    service, since RBAC middleware can't express "your own record"; non-owner
+    non-management → `403`). Streams a PDF (`Content-Type: application/pdf`) rendered
+    from the existing `PayrollRecord` snapshot (no on-the-fly recompute — the snapshot
+    already encodes ADR-014 proration from when it was generated, e.g. by the S01 seed;
+    there is no "run payroll for this month" endpoint in this session's scope).
+  - `GET /payroll/:employeeId/salary-structure` — ADMIN-only (ADR-001). Returns the
+    detailed shape from `docs/API.md §5` (`earnings.<name>.{computationType,value,amount}`,
+    `deductions.<name>.{value,amount}`, `gross`, `monthlyNet`, `totalDeductions`).
+  - `PUT /payroll/:employeeId/salary-structure` — ADMIN-only; HR/EMPLOYEE get `403`.
+    Body `{ wage, config? }` (`SalaryStructureSchema` from `@dayflow/shared`, unchanged).
+    Always recomputes via `computeSalary` — never trusts a client-sent total. Upserts
+    `SalaryStructure`.
+  - **Route order:** `/:id/payslip` is registered before `/:employeeId/salary-structure`
+    per the session spec's guidance, though the two don't actually collide in Express
+    (different literal trailing segment).
+- **`payroll.calc.ts` (pure, unit-verified, no Prisma/Express import except `Prisma.Decimal`
+  and the local `ValidationError`):**
+  - `computeSalary(wage, cfg?)` — ADR-013: `basic = basicPct% of wage` (default 50),
+    `hra = hraPctOfBasic% of basic` (default 50), `standardAllowance` fixed (default 4167),
+    `performanceBonus`/`lta` = their pct of basic (default 8.33 each),
+    `fixedAllowance = wage − sum(all above)` (balancer, so `gross === wage`),
+    `pfEmployee`/`pfEmployer = pfPct% of basic` (default 12 each; only `pfEmployee` is
+    deducted from take-home), `professionalTax` fixed (default 200),
+    `monthlyNet = gross − pfEmployee − professionalTax`. All money is `Prisma.Decimal`,
+    rounded to 2dp per component. Throws `ValidationError` (400) if `monthlyNet` would
+    be negative. Verified against the spec's exact numbers (wage 50,000 → basic 25,000,
+    hra 12,500, performanceBonus/lta 2,082.50, pfEmployee 3,000, professionalTax 200,
+    monthlyNet 46,800) — see `build/logs/S08-log.md` for how.
+  - `prorateByPayableDays(monthlyNet, payableDays, workingDays)` — ADR-014:
+    `round(monthlyNet × payableDays / workingDays)` to the nearest whole rupee
+    (`Prisma.Decimal.ROUND_HALF_UP`); `workingDays <= 0` short-circuits to
+    `round(monthlyNet)`. Verified against the doc example (46,800 × 22/23 → 44,765) and
+    against every one of the 90 seeded `PayrollRecord` rows.
+- **`payslip.pdf.ts`:** `renderPayslipPdf(data: PayslipData): Promise<Buffer>` using
+  `pdfkit`. INR-formatted via `Intl.NumberFormat('en-IN', {style:'currency',
+  currency:'INR'})`. Pure function of a plain `PayslipData` object — no Prisma import —
+  so it's independently callable/testable.
+- **S09 audit hook:** `auditPayrollUpdate({ actorUserId, employeeId, oldValues:
+  SalaryStructure|null, newValues: SalaryStructure })`, exported from
+  `payroll.service.ts`. Currently a no-op with a `// TODO(S09): persist an AuditLog row +
+  notify()` comment; called once, after a successful `PUT .../salary-structure` upsert.
+  S09 should replace the body with a real `AuditLog` write (do not change the call site
+  or signature unless the contract needs to grow).
+- **New dependency:** `pdfkit` (+ `@types/pdfkit` dev) added to `apps/api/package.json`;
+  `package-lock.json` updated accordingly (intentional — this is the point of the
+  dependency addition, not a stray regeneration).
+- **No `@dayflow/shared` changes.** `SalaryStructureSchema` and `PayrollListQuerySchema`
+  already covered everything needed; the list-query + pagination merge lives locally in
+  `payroll.schema.ts` (module-level composition, not a shared-contract change).
+- **Verification note (S04 not done yet):** `requireAuth`/`requireRole` are still S03
+  stubs that unconditionally throw `401`, so no curl-based acceptance criterion could be
+  run end-to-end with real tokens/roles. See `build/logs/S08-log.md` for exactly what was
+  verified instead (direct calls to `payroll.calc.ts`/`payroll.service.ts` against the
+  real seeded Postgres, plus a route-wiring smoke test confirming all 5 routes 401
+  correctly instead of 404/500). **Unblocks:** S09 (audit hook to wire), S15 (payroll UI
+  can build against these exact response shapes) — both still also need S04 for real auth.
+
+### S07 — Leave module (DONE)
+- **Router:** `apps/api/src/modules/leave/leave.routes.ts` exports `leaveRouter`,
+  mounted at `/leaves` in `apps/api/src/routes/index.ts` (replaced S03's TODO
+  comment for S07). Endpoints, all `requireAuth` + `requireRole` (ADMIN/HR where
+  noted) per docs/API.md §4 / ADR-006 / ADR-018:
+  - `POST /leaves` (self) — apply for leave. Body per `ApplyLeaveSchema`
+    (`@dayflow/shared`, field is `type` not `leaveType` — matches the existing
+    shared schema/API.md, the session file's own wording was imprecise). Accepts
+    `multipart/form-data` with a `file` field (stored under
+    `apps/api/uploads/leave-attachments/`, gitignored) **or** a JSON
+    `attachmentUrl`; an uploaded file wins if both are present. → `201`.
+  - `GET /leaves/me` (any role) — caller's own history, cursor-paginated
+    (`nextCursor` in `meta`).
+  - `GET /leaves` (ADMIN/HR) — all leave requests, optional `?status=`, cursor
+    pagination, includes `{ employee: { firstName, lastName } }`.
+  - `PATCH /leaves/:id/approve` (ADMIN/HR) — atomic (see below). → `200`.
+  - `PATCH /leaves/:id/reject` (ADMIN/HR) — body `{ reason }` (`RejectLeaveSchema`,
+    min 5 chars). → `200`.
+  - `GET /leaves/balance/me` (any role) — `{ PAID, SICK, CASUAL }` each
+    `{ allocated, used, remaining }` for the current calendar year. `UNPAID` is
+    omitted (unlimited, ADR-004).
+  - `POST /leaves/allocations` (ADMIN/HR, ADR-018) — body `AllocateLeaveSchema`
+    (`{ employeeId, type, totalAllowed, year? }`, year defaults to current year).
+    Upserts `LeaveBalance` by `[employeeId, leaveType, year]`; a re-allocation sets
+    `totalAllowed` and never resets `used`. → `201`.
+- **Service (`leave.service.ts`), all exported:**
+  - `countWorkingDays(startDate: Date, endDate: Date): number` — pure helper, UTC
+    date-only, inclusive, skips Sat/Sun. S12/S14/S08 can reuse this directly.
+  - `applyLeave`, `listMyLeaves`, `listAllLeaves`, `approveLeave`, `rejectLeave`,
+    `getMyBalance`, `allocateBalance`.
+  - **Balance validation:** skipped entirely for `UNPAID`; for `PAID`/`SICK`/
+    `CASUAL`, looked up by `[employeeId, type, year]` where `year` =
+    `startDate.getUTCFullYear()` (not "this year" — lets a leave request booked
+    near year-end validate against the balance for the year it actually falls
+    in). Insufficient balance → `AppError(422, 'INSUFFICIENT_LEAVE_BALANCE', ...)`.
+  - **Overlap:** any existing `PENDING`/`APPROVED` leave for the same employee
+    whose range intersects the new one (regardless of leave type) →
+    `AppError(409, 'LEAVE_OVERLAP', ...)`.
+  - **Atomic approve (ADR-006):** `prisma.$transaction` re-fetches the leave,
+    re-checks `status === 'PENDING'` (else `AppError(409, 'LEAVE_NOT_PENDING', ...)`
+    — also used by reject), updates `status`/`reviewedById`/`reviewedAt`, and (for
+    balance-tracked types only) increments `LeaveBalance.used` by `totalDays` in
+    the same transaction.
+  - `resolveEmployeeId(userId)` (private) maps the authenticated `User.id` →
+    `Employee.id` via `prisma.employee.findUnique({ where: { userId } })` — every
+    other backend module needing "current employee from `req.user`" will need
+    the same lookup; not yet centralized anywhere shared.
+- **S09 hook:** `apps/api/src/modules/leave/leave.hooks.ts` exports
+  `notifyLeaveDecision(event: { employeeId, leaveId, status: 'APPROVED'|'REJECTED', reason? }): void`
+  — a no-op today (`// TODO(S09): emit SSE event + create in-app Notification + AuditLog`).
+  Called by `leave.service.ts` after a successful approve/reject.
+- **Types:** `leave.types.ts` exports `BALANCE_TRACKED_LEAVE_TYPES`,
+  `BalanceTrackedLeaveType`, `isBalanceTracked(type)`, `LeaveBalanceLine`,
+  `LeaveBalanceSummary`.
+- **No `@dayflow/shared` changes needed** — `ApplyLeaveSchema`, `RejectLeaveSchema`,
+  `ApproveLeaveSchema`, `AllocateLeaveSchema`, `LeaveListQuerySchema` (S02) already
+  covered every input this session needed; not a shared-contract change.
+- **New dependency:** `apps/api` added `multer@^2.2.0` (+ `@types/multer` dev dep)
+  for the multipart attachment upload — the 1.x line is deprecated/vulnerable, so
+  this pins to the patched 2.x major. `apps/api/uploads/` is gitignored (runtime
+  file storage, not committed).
+- **Verification note:** S04 (auth) is still stub-only, so none of this could be
+  curl-tested end-to-end with a real bearer token. Verified instead by calling
+  `leave.service.ts` functions directly against the real seeded Postgres (balance
+  math, overlap, atomic approve, allocation upsert, `countWorkingDays`) — see
+  `build/logs/S07-log.md` for exactly what was/wasn't verified this way.
+- Unblocks: S14 (attendance + leave pages) can build against these endpoints now
+  (still blocked on real tokens until S04 lands). S09 can wire `notifyLeaveDecision`
+  once it exists.
 
 ### S01 — Database (Prisma) (DONE)
 - `packages/db/prisma/schema.prisma` contains the final schema per ADRs.
@@ -246,3 +479,11 @@ never redefine. Files under `packages/shared/src/`:
   `npm run db:generate` (and `db:migrate`) as its first steps.
 - **`.md` files are Prettier-ignored** (`.prettierignore`) — hand-aligned tables.
   Prettier governs code only; don't reformat the docs.
+- **S07:** the shared local Postgres had no migrations applied yet when this session
+  started (`Company` table didn't exist) despite being reported healthy — ran
+  `npm run db:deploy -w @dayflow/db` (`prisma migrate deploy`, safe/non-interactive)
+  then `npm run db:seed` before any leave work could be verified. If another
+  parallel session hits `P2021 table does not exist`, that's why — just run the same
+  two commands once. Also: `apps/api/.env` isn't picked up by root-level
+  `npm run db:*` scripts (they need `DATABASE_URL` in the shell env directly, since
+  those proxy straight to `prisma` without `tsx --env-file`).
