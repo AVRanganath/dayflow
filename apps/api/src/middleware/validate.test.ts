@@ -44,6 +44,6 @@ describe('Validate Middleware', () => {
 
     expect(next).toHaveBeenCalledOnce();
     // next should be called with a ZodError
-    expect(next.mock.calls[0]![0]).toBeInstanceOf(z.ZodError);
+    expect(vi.mocked(next).mock.calls[0]![0]).toBeInstanceOf(z.ZodError);
   });
 });

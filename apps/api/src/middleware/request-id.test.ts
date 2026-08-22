@@ -12,7 +12,7 @@ describe('Request ID Middleware', () => {
 
     expect(req.id).toBeDefined();
     expect(typeof req.id).toBe('string');
-    expect(req.id.length).toBeGreaterThan(30); // It's a UUID
+    expect((req.id as string).length).toBeGreaterThan(30); // It's a UUID
     expect(res.setHeader).toHaveBeenCalledWith('X-Request-Id', req.id);
     expect(next).toHaveBeenCalledOnce();
   });

@@ -77,7 +77,7 @@ describe('Rate Limit Middleware', () => {
 
     // next should be called with AppError RATE_LIMITED
     expect(next).toHaveBeenCalledOnce();
-    const errArg = vi.mocked(next).mock.calls[0]![0];
+    const errArg = vi.mocked(next).mock.calls[0]![0] as unknown;
     expect(errArg).toBeInstanceOf(AppError);
     if (errArg instanceof AppError) {
       expect(errArg.statusCode).toBe(429);
