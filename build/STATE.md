@@ -30,7 +30,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S03 | API core | DONE | Mukunda | feat/s03-api-core | S01, S02 | app bootstrap, middleware, `AppError`, `/health` (see detail) |
 | S04 | Auth module | DONE | Pramith | feat/s04-auth | S03 | auth endpoints, `requireAuth`/`requireRole`, JWT+bcrypt, refresh cookie (see detail) |
 | S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
-| S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
+| S06 | Attendance module | DONE | Pramith | feat/s06-attendance | S03 | 5 attendance endpoints, exported `computeWorkStatus` helper (see detail) |
 | S07 | Leave module | TODO | Ranganath | — | S03 | leave endpoints, balance logic, allocations |
 | S08 | Payroll module | TODO | Chandan | — | S03 | payroll endpoints, salary engine, payslip PDF |
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
@@ -61,6 +61,40 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
 
+### S06 — Attendance module (DONE)
+Files under `apps/api/src/modules/attendance/` (layered route→controller→service→prisma):
+- **Endpoints** (mounted at `/api/v1/attendance` via `router.use('/attendance', attendanceRouter)`):
+  - `POST /check-in` (EMPLOYEE) → `201 { id, checkInTime, status:'PRESENT', workStatus:'PRESENT' }`.
+    Second check-in same day → **`409 CONFLICT`** (detail `code:'ALREADY_CHECKED_IN'`) via the
+    `@@unique([employeeId,date])` guard.
+  - `POST /check-out` (EMPLOYEE), body `CheckOutSchema` (`breakMinutes?`) →
+    `200 { id, checkOutTime, breakMinutes, hoursWorked, extraHours }`. No check-in today → **404**;
+    already checked out → **`409`** (detail `code:'ALREADY_CHECKED_OUT'`).
+  - `GET /me` (EMPLOYEE), query `{ range: daily|weekly|monthly (default monthly), cursor?, limit? }` →
+    `200 data:[{ id,date,checkInTime,checkOutTime,breakMinutes,hoursWorked,extraHours,status }]`,
+    `meta:{ nextCursor, limit }`.
+  - `GET /` (ADMIN/HR), query `AttendanceListQuerySchema` (`date?`,`departmentId?`,`status?`) + `cursor?`,`limit?`
+    → rows also carry `employeeId` + `employee:{ name, departmentId }`; `meta` cursor.
+  - `GET /summary` (ADMIN/HR), query `{ date? (YYYY-MM-DD, default today) }` →
+    `200 { totalEmployees, present, absent, onLeave }`.
+- **Hours math (ADR-019):** `hoursWorked = round2((checkOut−checkIn) − breakMinutes/60)` (≥0),
+  `extraHours = max(0, hoursWorked − 8)`. **Standard workday = 8h.** Stored `Decimal(5,2)`.
+- **Range windows** (UTC, date-only, inclusive, ending today): `daily`=today; `weekly`=last 7 days
+  (today−6…today); `monthly` (**default**)=1st-of-current-month…today, day-wise.
+- **Summary rule** (S12 must match): `totalEmployees`=active employees (`User.isActive`);
+  `present`=rows that day with `PRESENT`|`HALF_DAY`; `onLeave`=`ON_LEAVE` rows;
+  `absent`=`max(0, total−present−onLeave)`. Invariant: `present+absent+onLeave === totalEmployees`.
+- **Exported `workStatus` helper (ADR-017), for S05/S12/S13:**
+  `computeWorkStatus(employeeId: string, date?: Date): Promise<'PRESENT'|'ABSENT'|'ON_LEAVE'>`
+  **Import path:** `import { computeWorkStatus } from '../attendance/work-status.js'` (adjust the
+  relative prefix from your module; also re-exported by `attendance.service.js`).
+  `work-status.ts` also exports `today()` and `toDateOnly(date)` UTC-midnight helpers and the
+  `WorkStatus` type. Rule: `ON_LEAVE` if attendance row `ON_LEAVE` or an APPROVED `LeaveRequest`
+  spans the date; `PRESENT` if row `PRESENT`/`HALF_DAY` or has `checkIn`; else `ABSENT`.
+- **Note:** `req.user` = `{ id (User.id), role }` — employee routes map to `Employee.id` via
+  `resolveEmployeeId(userId)`. Runtime protected-route testing is blocked until S04 fills the
+  `requireAuth`/`requireRole` stubs. S03's referenced shared `validate`/`sendSuccess` helpers were
+  not committed, so a local `attendance.http.ts` provides them (swap to shared when they land).
 ### S04 — Auth (DONE)
 - **Endpoints** (all under `/api/v1/auth`, tighter rate limit 10 req/60s per IP):
   `POST /signup` (company/admin onboarding, ADR-012 — 201, gated on `count(ADMIN)===0`
