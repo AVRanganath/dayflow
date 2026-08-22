@@ -316,9 +316,65 @@ async function main() {
     });
   }
 
-  // Audit Logs
-  await prisma.auditLog.create({
-    data: {
+  // Leave Requests — a spread of statuses for a realistic demo.
+  // Idempotent via deterministic ids. Admin (index 0) is the reviewer.
+  const reviewer = createdEmployees[0];
+  const countWorkingDays = (start: Date, end: Date) => {
+    let days = 0;
+    const cur = new Date(start);
+    while (cur <= end) {
+      const dow = cur.getUTCDay();
+      if (dow !== 0 && dow !== 6) days++;
+      cur.setUTCDate(cur.getUTCDate() + 1);
+    }
+    return Math.max(1, days);
+  };
+  const leaveSpecs = [
+    { status: LeaveStatus.APPROVED, type: LeaveType.PAID, monthOffset: -1, startDay: 10, len: 2,
+      reason: 'Family function to attend out of town.', comment: 'Approved. Enjoy your time off!' },
+    { status: LeaveStatus.PENDING, type: LeaveType.SICK, monthOffset: 0, startDay: 22, len: 1,
+      reason: 'Feeling unwell, need a day to recover.', comment: null },
+    { status: LeaveStatus.REJECTED, type: LeaveType.CASUAL, monthOffset: -2, startDay: 5, len: 3,
+      reason: 'Short-notice personal trip request.', comment: 'Insufficient coverage for those dates.' },
+  ];
+  for (let i = 1; i < createdEmployees.length; i++) {
+    const emp = createdEmployees[i];
+    const count = 1 + (i % 3); // 1..3 requests per employee
+    for (let n = 0; n < count; n++) {
+      const s = leaveSpecs[n];
+      const base = new Date(today.getFullYear(), today.getMonth() + s.monthOffset, s.startDay);
+      const start = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
+      const end = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate() + s.len - 1));
+      const reviewed = s.status !== LeaveStatus.PENDING;
+      await prisma.leaveRequest.upsert({
+        where: { id: `seed-leave-${emp.id}-${n}` },
+        update: {},
+        create: {
+          id: `seed-leave-${emp.id}-${n}`,
+          employeeId: emp.id,
+          leaveType: s.type,
+          startDate: start,
+          endDate: end,
+          totalDays: countWorkingDays(start, end),
+          reason: s.reason,
+          status: s.status,
+          reviewedById: reviewed ? reviewer.id : null,
+          reviewerComment: s.comment,
+          reviewedAt: reviewed
+            ? new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() - 3))
+            : null,
+          attachmentUrl: s.type === LeaveType.SICK ? 'https://files.dayflow.local/certs/sick-note.pdf' : null,
+        },
+      });
+    }
+  }
+
+  // Audit Logs (idempotent)
+  await prisma.auditLog.upsert({
+    where: { id: 'seed-audit-company' },
+    update: {},
+    create: {
+      id: 'seed-audit-company',
       userId: (await prisma.user.findUnique({ where: { email: 'admin@dayflow.com' } }))!.id,
       action: 'CREATE',
       entity: 'Company',
