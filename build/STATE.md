@@ -32,6 +32,10 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
 | S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
 | S07 | Leave module | DONE | Ranganath | feat/s07-leave | S03 | leave endpoints, balance logic, allocations (see detail) |
+| S04 | Auth module | DONE | Pramith | feat/s04-auth | S03 | auth endpoints, `requireAuth`/`requireRole`, JWT+bcrypt, refresh cookie (see detail) |
+| S05 | Employee & department | DONE | Chandan | feat/s05-employee | S03 | employee/department/company endpoints, `generateLoginId`, `computeWorkStatus`, row-level guard (see detail) |
+| S06 | Attendance module | DONE | Pramith | feat/s06-attendance | S03 | 5 attendance endpoints, exported `computeWorkStatus` helper (see detail) |
+| S07 | Leave module | TODO | Ranganath | — | S03 | leave endpoints, balance logic, allocations |
 | S08 | Payroll module | TODO | Chandan | — | S03 | payroll endpoints, salary engine, payslip PDF |
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
@@ -60,6 +64,135 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
+
+### S05 — Employee & Department (DONE)
+- **Routers mounted** in `apps/api/src/routes/index.ts`: `/employees`, `/departments`,
+  `/company`. All routes behind `requireAuth`; management routes add
+  `requireRole('ADMIN','HR')`, company update adds `requireRole('ADMIN')`.
+- **Endpoints (base `/api/v1`):**
+  - `POST /employees` (ADMIN/HR, ADR-012) — body `CreateEmployeeSchema`. Auto-mints
+    `loginId` + temp password + `employeeId`/`employeeCode` (`EMP0001`…), creates
+    `User`+`Employee`+default `LeaveBalance` (PAID 24/SICK 7/CASUAL 7) in ONE
+    transaction. `201` → `{ id (employeeId), firstName, lastName, email, loginId, role,
+    temporaryPassword, mustChangePassword:true }`. `temporaryPassword` is returned
+    **once here only**.
+  - `GET /employees` (ADMIN/HR) — query `EmployeeListQuerySchema` + `PaginationQuerySchema`
+    (`cursor`, `limit` default 20). `search` = case-insensitive over firstName/lastName/
+    email; AND-combined with `departmentId`/`employmentType`/`role` filters. Each row
+    carries computed `workStatus` (ADR-017). Envelope `meta:{ nextCursor, limit }`.
+  - `GET /employees/me` (any auth) — caller's own `Employee` (resolved from
+    `req.user.id` = User id → `Employee.userId`), incl. `workStatus`, `user.loginId/role/
+    mustChangePassword`.
+  - `PUT /employees/me` (any auth) — restricted self-update; body `UpdateProfileSchema`
+    (`.strict()`, self-editable subset only: phone, personalEmail, address, city, state,
+    country, zipCode, profilePicture, resume fields about/whatILove/hobbies/skills/
+    certifications). Any other key → 400 `VALIDATION_ERROR`.
+  - `GET /employees/:id` — ADMIN/HR **or self**; row-level enforced in service via
+    `assertCanAccessEmployee` (EMPLOYEE reading another id → `403 FORBIDDEN`).
+  - `PUT /employees/:id` (ADMIN/HR) — body `AdminUpdateEmployeeSchema` (full ADR-015
+    set incl. `managerId`). Validates `managerId`/`departmentId` exist; rejects
+    self-referential `managerId` → 400.
+  - `PATCH /employees/:id/profile-picture` — ADMIN/HR or self. **Accepts JSON `{ url }`**
+    (multipart storage stubbed, see log/upload.ts); returns `{ profilePictureUrl }`.
+  - `GET /departments` (any auth) → `[{ id, name, description }]`, sorted by name.
+  - `GET /company` (any auth) → full `Company` row (`id, name, logoUrl, loginIdPrefix,
+    settings, createdAt, updatedAt`).
+  - `PUT /company` (**ADMIN-only**) — body `UpdateCompanySchema`. `settings` is
+    **shallow-merged** onto existing settings (partial patch keeps other keys).
+- **Helpers (in `apps/api/src/lib/`, reusable by other sessions):**
+  - `login-id.ts`: `generateLoginId(prefix, firstName, lastName, joinYear, serial)` (pure,
+    unit-tested, `OIJODO20220001`) + `generateTempPassword(length=12)`.
+  - `work-status.ts`: `computeWorkStatus(employeeId)` / `computeWorkStatuses(ids[])`
+    (batched, no N+1) + `todayRange()`. PRESENT = attendance today with checkIn;
+    ON_LEAVE = approved leave covering today; else ABSENT. **S06 may replace with its
+    canonical helper** (imported here as a local minimal version, ADR-017).
+  - `password.ts`: `hashPassword(plain)` (bcryptjs, 10 rounds) — S04 may fold into its own.
+  - `pagination.ts`: `cursorArgs(limit, cursor?)` + `buildPage(rows, limit)` (id-based
+    cursor, fetches limit+1, stable `orderBy:{ id:'asc' }`).
+  - `http.ts`: `sendSuccess(res, data, status?, meta?)` + `asyncHandler(fn)` (Express-4
+    async error forwarding). `validate.ts`: `validate(schema, 'body'|'query'|'params')`.
+  - `upload.ts`: `ProfilePictureUrlSchema` + `resolveProfilePictureUrl` (URL stub).
+- **Row-level rule:** `assertCanAccessEmployee(reqUser, targetEmployeeId)` — ADMIN/HR pass
+  for any id; EMPLOYEE only for their own (resolved via userId→employeeId). Reused by
+  `getById` and the self-scoped profile-picture path.
+- **Notes for S12/S13:** the auth principal is `{ id: <User.id>, role }` — the employee id
+  is looked up server-side, never sent by the client. `passwordHash` is never selected/
+  returned. New dep added to `apps/api`: `bcryptjs` (^3.0.3, ships own types).
+- **Testing caveat:** protected routes could not be curl-tested at runtime — S04's
+  `requireAuth`/`requireRole` are still stubs that throw. Service logic was verified via a
+  throwaway tsx script against the seeded DB (all criteria pass at the service layer).
+### S06 — Attendance module (DONE)
+Files under `apps/api/src/modules/attendance/` (layered route→controller→service→prisma):
+- **Endpoints** (mounted at `/api/v1/attendance` via `router.use('/attendance', attendanceRouter)`):
+  - `POST /check-in` (EMPLOYEE) → `201 { id, checkInTime, status:'PRESENT', workStatus:'PRESENT' }`.
+    Second check-in same day → **`409 CONFLICT`** (detail `code:'ALREADY_CHECKED_IN'`) via the
+    `@@unique([employeeId,date])` guard.
+  - `POST /check-out` (EMPLOYEE), body `CheckOutSchema` (`breakMinutes?`) →
+    `200 { id, checkOutTime, breakMinutes, hoursWorked, extraHours }`. No check-in today → **404**;
+    already checked out → **`409`** (detail `code:'ALREADY_CHECKED_OUT'`).
+  - `GET /me` (EMPLOYEE), query `{ range: daily|weekly|monthly (default monthly), cursor?, limit? }` →
+    `200 data:[{ id,date,checkInTime,checkOutTime,breakMinutes,hoursWorked,extraHours,status }]`,
+    `meta:{ nextCursor, limit }`.
+  - `GET /` (ADMIN/HR), query `AttendanceListQuerySchema` (`date?`,`departmentId?`,`status?`) + `cursor?`,`limit?`
+    → rows also carry `employeeId` + `employee:{ name, departmentId }`; `meta` cursor.
+  - `GET /summary` (ADMIN/HR), query `{ date? (YYYY-MM-DD, default today) }` →
+    `200 { totalEmployees, present, absent, onLeave }`.
+- **Hours math (ADR-019):** `hoursWorked = round2((checkOut−checkIn) − breakMinutes/60)` (≥0),
+  `extraHours = max(0, hoursWorked − 8)`. **Standard workday = 8h.** Stored `Decimal(5,2)`.
+- **Range windows** (UTC, date-only, inclusive, ending today): `daily`=today; `weekly`=last 7 days
+  (today−6…today); `monthly` (**default**)=1st-of-current-month…today, day-wise.
+- **Summary rule** (S12 must match): `totalEmployees`=active employees (`User.isActive`);
+  `present`=rows that day with `PRESENT`|`HALF_DAY`; `onLeave`=`ON_LEAVE` rows;
+  `absent`=`max(0, total−present−onLeave)`. Invariant: `present+absent+onLeave === totalEmployees`.
+- **Exported `workStatus` helper (ADR-017), for S05/S12/S13:**
+  `computeWorkStatus(employeeId: string, date?: Date): Promise<'PRESENT'|'ABSENT'|'ON_LEAVE'>`
+  **Import path:** `import { computeWorkStatus } from '../attendance/work-status.js'` (adjust the
+  relative prefix from your module; also re-exported by `attendance.service.js`).
+  `work-status.ts` also exports `today()` and `toDateOnly(date)` UTC-midnight helpers and the
+  `WorkStatus` type. Rule: `ON_LEAVE` if attendance row `ON_LEAVE` or an APPROVED `LeaveRequest`
+  spans the date; `PRESENT` if row `PRESENT`/`HALF_DAY` or has `checkIn`; else `ABSENT`.
+- **Note:** `req.user` = `{ id (User.id), role }` — employee routes map to `Employee.id` via
+  `resolveEmployeeId(userId)`. Runtime protected-route testing is blocked until S04 fills the
+  `requireAuth`/`requireRole` stubs. S03's referenced shared `validate`/`sendSuccess` helpers were
+  not committed, so a local `attendance.http.ts` provides them (swap to shared when they land).
+### S04 — Auth (DONE)
+- **Endpoints** (all under `/api/v1/auth`, tighter rate limit 10 req/60s per IP):
+  `POST /signup` (company/admin onboarding, ADR-012 — 201, gated on `count(ADMIN)===0`
+  else `403 REGISTRATION_CLOSED`; creates Company + first ADMIN User + Employee in one
+  `$transaction`; returns `{ company, user, accessToken }`), `POST /signin`
+  (`{ identifier, password }`, email OR loginId; `401 INVALID_CREDENTIALS`; returns
+  `{ user, accessToken }` incl. `mustChangePassword`), `POST /refresh` (cookie-based,
+  rotates + blacklists old, returns `{ accessToken }`), `POST /logout` (clears cookie +
+  blacklists), `POST /change-password` (requireAuth; clears `mustChangePassword`),
+  `GET /verify-email/:token`, `POST /forgot-password` (no enumeration, logs link),
+  `POST /reset-password`.
+- **Guards** (import from `apps/api/src/middleware/auth.ts`, relative `../../middleware/auth.js`):
+  `requireAuth(req,res,next)` — reads `Authorization: Bearer <token>`, verifies the
+  access JWT, sets `req.user`, else throws `UnauthorizedError` (401). `requireRole(...roles: Role[])`
+  → returns middleware; throws `ForbiddenError` (403) if `req.user.role` ∉ roles (run
+  after `requireAuth`). ADMIN+HR are management (ADR-001), e.g. `requireRole('ADMIN','HR')`.
+- **`req.user` shape:** `AuthUser { id: string; role: Role }` (the S03 stub type, kept
+  as-is). `employeeId` is NOT on `req.user`; it rides inside the access-token payload —
+  S05+ that need it should decode/verify the token or look up `Employee` by `userId`.
+- **Tokens (ADR-007):** access JWT 15m (`JWT_ACCESS_SECRET`/`_EXPIRY`), payload
+  `{ sub: userId, employeeId: string|null, role }`, returned in JSON body. Refresh JWT
+  7d (`JWT_REFRESH_SECRET`/`_EXPIRY`), payload `{ sub, role, jti }`, delivered as the
+  **HttpOnly** cookie `dayflow_rt` (`SameSite=Strict`, `Secure` in prod, `Path=/api/v1/auth`,
+  `maxAge` 7d). Helpers in `apps/api/src/lib/jwt.ts`: `signAccessToken`, `signRefreshToken`,
+  `verifyAccess`, `verifyRefresh`.
+- **Password helpers** `apps/api/src/lib/password.ts`: `hashPassword`, `comparePassword`
+  (bcryptjs, cost 10).
+- **Blacklist:** on logout/refresh-rotation, the refresh token's `jti` is stored in Redis
+  key `auth:blacklist:<jti>` with TTL = remaining lifetime; `refresh` rejects blacklisted
+  jtis (`401`). Fails open if Redis is down.
+- **New building blocks added (S03 STATE listed these as existing but they were absent):**
+  `apps/api/src/lib/response.ts` → `sendSuccess(res, data, status?, meta?)` (ADR-010
+  envelope); `apps/api/src/middleware/validate.ts` → `validate(schema)` (parses `req.body`,
+  forwards ZodError → 400 `VALIDATION_ERROR`). S05+ should reuse these.
+- **App wiring:** `cookie-parser` added to `app.ts`; `router.use('/auth', authRouter)` in
+  `routes/index.ts`. New deps in `apps/api`: `bcryptjs`, `jsonwebtoken`, `cookie-parser`
+  (+ `@types/*`).
+- Unblocks S11 (auth pages) and lets S05–S08 guard routes with `requireAuth`/`requireRole`.
 
 ### S03 — API core (DONE)
 - **Boot:** `apps/api/src/server.ts` is the process entry (`npm run dev -w apps/api`,

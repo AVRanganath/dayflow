@@ -1,11 +1,16 @@
 /**
  * Base router, mounted at `/api/v1` (`API_BASE`) by `app.ts`. Feature routers
  * (auth, employees, attendance, leaves, payroll, notifications, events) are
- * mounted here by S04–S09 — do not implement them in S03.
+ * mounted here by S04–S09.
  */
 import { Router } from 'express';
 import type { SuccessResponse } from '@dayflow/shared';
 import { leaveRouter } from '../modules/leave/leave.routes.js';
+import { authRouter } from '../modules/auth/auth.routes.js';
+import { employeesRouter } from '../modules/employee/employee.route.js';
+import { departmentsRouter } from '../modules/department/department.route.js';
+import { companyRouter } from '../modules/company/company.route.js';
+import { attendanceRouter } from '../modules/attendance/attendance.route.js';
 
 export const router = Router();
 
@@ -18,5 +23,11 @@ router.get('/health', (_req, res) => {
 // TODO(S05): router.use('/employees', employeesRouter); router.use('/departments', departmentsRouter); router.use('/company', companyRouter)
 // TODO(S06): router.use('/attendance', attendanceRouter)
 router.use('/leaves', leaveRouter);
+router.use('/auth', authRouter);
+router.use('/employees', employeesRouter);
+router.use('/departments', departmentsRouter);
+router.use('/company', companyRouter);
+router.use('/attendance', attendanceRouter);
+// TODO(S07): router.use('/leaves', leavesRouter)
 // TODO(S08): router.use('/payroll', payrollRouter)
 // TODO(S09): router.use('/notifications', notificationsRouter); router.use('/events', eventsRouter)

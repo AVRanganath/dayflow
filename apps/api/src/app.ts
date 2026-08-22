@@ -6,6 +6,7 @@
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { pinoHttp } from 'pino-http';
 import { API_BASE } from '@dayflow/shared';
 import { env } from './config/env.js';
@@ -21,6 +22,7 @@ export const app: Express = express();
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(requestId);
 app.use(pinoHttp({ logger }));
 
