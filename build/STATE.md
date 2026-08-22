@@ -27,7 +27,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S00 | Bootstrap & tooling | DONE | Chandan | feat/s00-bootstrap | — | npm workspaces + turbo, shared config, docker-compose, `.env.example` |
 | S01 | Database (Prisma) | TODO | Ranganath | — | S00 | migration name, seed cmd, demo creds |
 | S02 | Shared package | DONE | Chandan | feat/s02-shared | S00 | Zod schemas + `z.infer` types + enums/routes/envelope (see detail) |
-| S03 | API core | TODO | Ranganath | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
+| S03 | API core | TODO | Mukunda | — | S01, S02 | app bootstrap, middleware, `AppError`, `/health` |
 | S04 | Auth module | TODO | Chandan | — | S03 | auth endpoints, `requireAuth`/`requireRole`, token shape |
 | S05 | Employee & department | TODO | Ranganath | — | S03 | employee/department/company endpoints, loginId helper |
 | S06 | Attendance module | TODO | Chandan | — | S03 | attendance endpoints, `workStatus` helper |
@@ -44,13 +44,13 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 
 ### Assignment & order (who does what, and the gate to start)
 - **Chandan** (backend): S00 → S02 → S04 → S06 → S08. *Runs S00 first, alone — everyone waits on it.*
-- **Ranganath** (backend): S01 → S03 → S05 → S07 → S09. *S09 is last (needs all of S04–S08).*
+- **Ranganath** (backend): S01 → S05 → S07 → S09. *S09 is last (needs all of S04–S08).*
 - **Pramith** (frontend): S10 → S11 → S13. *S10 unlocks all frontend.*
-- **Mukunda** (frontend): S14 → S15 → S12. *Starts once S06/S07 land; pairs on S10 meanwhile.*
+- **Mukunda**: **S03 (API core)** → S14 → S15 → S12. *Takes S03 first — it's unblocked by S01+S02 and gates all backend modules; frontend pages follow once S10 + their modules land.*
 - **All four**: S16 together at the end.
 
 **Wave order:** ① Chandan S00 (solo) → ② Ranganath S01 + Chandan S02 (parallel) →
-③ Ranganath S03 + Pramith S10 (parallel) → ④ backend fans out (Chandan S04/S06/S08,
+③ Mukunda S03 + Pramith S10 (parallel) → ④ backend fans out (Chandan S04/S06/S08,
 Ranganath S05/S07) while frontend follows each module (Pramith S11→S13, Mukunda
 S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
