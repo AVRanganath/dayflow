@@ -265,11 +265,7 @@ export function AdminDashboard() {
           />
 
           <div className="mt-2 flex items-center justify-end gap-2.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setRejectModalOpen(false)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setRejectModalOpen(false)}>
               Cancel
             </Button>
             <Button

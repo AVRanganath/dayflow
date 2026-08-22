@@ -97,7 +97,9 @@ export function EmployeeDashboard() {
         <div className="flex flex-col justify-between rounded-card border border-border bg-card p-6 shadow-card">
           <div>
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-[15px] font-bold text-text-primary">Leave Balance</h2>
+              <h2 className="font-display text-[15px] font-bold text-text-primary">
+                Leave Balance
+              </h2>
               <span className="text-xs text-text-secondary">Year {new Date().getFullYear()}</span>
             </div>
 
@@ -143,7 +145,9 @@ export function EmployeeDashboard() {
         {/* 3. Recent Activity Card */}
         <div className="flex flex-col justify-between rounded-card border border-border bg-card p-6 shadow-card">
           <div>
-            <h2 className="font-display text-[15px] font-bold text-text-primary">Recent Activity</h2>
+            <h2 className="font-display text-[15px] font-bold text-text-primary">
+              Recent Activity
+            </h2>
             <div className="mt-4 flex flex-col gap-3.5">
               {isLoading ? (
                 <div className="flex flex-col gap-3 py-2 animate-pulse">

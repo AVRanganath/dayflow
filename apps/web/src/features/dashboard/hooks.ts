@@ -160,7 +160,7 @@ export function useEmployeeDashboard() {
         api.get<RawAttendanceMeRow[]>('/attendance/me', { params: { range: 'daily' } }),
         api.get<RawAttendanceMeRow[]>('/attendance/me', { params: { range: 'weekly' } }),
         api.get<RawLeaveBalanceResponse>('/leaves/balance/me'),
-        api.get<{ items: RawLeaveMeRow[] }>('/leaves/me', { params: { limit: 5 } }),
+        api.get<RawLeaveMeRow[]>('/leaves/me', { params: { limit: 5 } }),
         api.get<{ workStatus?: WorkStatus }>('/employees/me'),
       ]);
 
@@ -293,8 +293,8 @@ export function useEmployeeDashboard() {
         });
       }
 
-      if (leavesRes.status === 'fulfilled' && leavesRes.value?.items) {
-        leavesRes.value.items.forEach((l) => {
+      if (leavesRes.status === 'fulfilled' && Array.isArray(leavesRes.value)) {
+        leavesRes.value.forEach((l) => {
           const appliedDate = new Date(l.createdAt);
           activities.push({
             id: `act-leave-${l.id}`,
@@ -335,7 +335,7 @@ export function useEmployeeDashboard() {
       }
 
       setStatsStrip({
-        totalWorkingDays: 22,
+        totalWorkingDays: monthPresent + monthAbsent + monthLeave,
         present: Math.max(monthPresent, isCheckedIn ? 1 : 0),
         absent: monthAbsent,
         leave: monthLeave,
@@ -442,11 +442,13 @@ export function useAdminDashboard() {
     try {
       setIsLoading(true);
 
+      // NOTE: the api client unwraps the envelope and returns `json.data`, so list
+      // endpoints come back as bare arrays (meta is dropped) — not `{ items }`/`{ data }`.
       const [summaryRes, leavesRes, payrollRes, employeesRes, deptRes] = await Promise.allSettled([
         api.get<RawAttendanceSummary>('/attendance/summary'),
-        api.get<{ items: RawAdminLeaveRow[] }>('/leaves', { params: { limit: 10 } }),
-        api.get<{ items: RawPayrollRecord[] }>('/payroll', { params: { limit: 100 } }),
-        api.get<{ data: RawEmployeeRow[] }>('/employees', { params: { limit: 100 } }),
+        api.get<RawAdminLeaveRow[]>('/leaves', { params: { limit: 10 } }),
+        api.get<RawPayrollRecord[]>('/payroll', { params: { limit: 100 } }),
+        api.get<RawEmployeeRow[]>('/employees', { params: { limit: 100 } }),
         api.get<RawDepartmentRow[]>('/departments'),
       ]);
 
@@ -480,17 +482,14 @@ export function useAdminDashboard() {
 
       // 2. Process Payroll Records (ADR-013/014 totals)
       let payrollTotal = 0;
-      if (payrollRes.status === 'fulfilled' && payrollRes.value?.items) {
-        payrollTotal = payrollRes.value.items.reduce(
-          (acc, row) => acc + (Number(row.netSalary) || 0),
-          0,
-        );
+      if (payrollRes.status === 'fulfilled' && Array.isArray(payrollRes.value)) {
+        payrollTotal = payrollRes.value.reduce((acc, row) => acc + (Number(row.netSalary) || 0), 0);
       }
 
       // 3. Process Leave Requests
       let pendingCount = 0;
-      const rawLeaves = leavesRes.status === 'fulfilled' ? leavesRes.value?.items || [] : [];
-      const employees = employeesRes.status === 'fulfilled' ? employeesRes.value?.data || [] : [];
+      const rawLeaves = leavesRes.status === 'fulfilled' ? (leavesRes.value ?? []) : [];
+      const employees = employeesRes.status === 'fulfilled' ? (employeesRes.value ?? []) : [];
       const empStatusMap = new Map<string, WorkStatus>();
       employees.forEach((emp) => {
         empStatusMap.set(emp.id, emp.workStatus);
@@ -498,9 +497,7 @@ export function useAdminDashboard() {
 
       const formattedLeaveRows: AdminLeaveRequestRow[] = rawLeaves.map((l) => {
         if (l.status === 'PENDING') pendingCount++;
-        const empName = l.employee
-          ? `${l.employee.firstName} ${l.employee.lastName}`
-          : 'Employee';
+        const empName = l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Employee';
         const start = new Date(l.startDate).toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -536,7 +533,7 @@ export function useAdminDashboard() {
         presentToday: present,
         presentPercentage: pct,
         pendingLeaves: pendingCount,
-        monthlyPayrollTotal: payrollTotal > 0 ? payrollTotal : 4250000,
+        monthlyPayrollTotal: payrollTotal,
       });
 
       // 5. Process Department Headcount
