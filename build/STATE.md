@@ -35,7 +35,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S08 | Payroll module | DONE | Chandan | feat/s08-payroll | S03 | payroll endpoints, salary engine, payslip PDF (see detail) |
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
-| S11 | Auth pages | TODO | Pramith | — | S10, S04 | `/signin`, onboarding, change-password |
+| S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
 | S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
 | S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
@@ -60,6 +60,23 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
+
+### S11 — Auth Pages (DONE)
+- **Routes & Pages (`apps/web/src/app/(auth)/`):**
+  - `(auth)/layout.tsx`: Split-screen public auth shell (left 50% brand panel with plum-to-dark-plum gradient, Montserrat Dayflow wordmark, Caveat Brush 52px marker headline with `#F0B93F` marker highlight behind "perfectly aligned.", 340px ring + 120px rotated square geometry, Caveat Brush 22px footnote; right panel hosting auth forms). Auto-redirects authenticated users to `/dashboard` (or `/change-password` if `mustChangePassword=true`).
+  - `/signin` (`signin/page.tsx`): "Welcome back" page rendering `SigninForm`.
+  - `/signup` (`signup/page.tsx`): "Set up your company" page rendering `OnboardingForm` (ADR-012 first-run company setup; displays registration complete notice with redirect to `/signin` if `403 REGISTRATION_CLOSED`).
+  - `/change-password` (`change-password/page.tsx`): Forced first-login password update page rendering `ChangePasswordForm`.
+- **Components (`apps/web/src/features/auth/`):**
+  - `SigninForm.tsx`: React Hook Form + Zod `SigninSchema` with support for email OR system-generated `loginId`, show/hide password toggle, and red error banner on `INVALID_CREDENTIALS`.
+  - `OnboardingForm.tsx`: Company & Admin registration with full-name splitting, password confirmation, dynamic strength meter, and `REGISTRATION_CLOSED` handling.
+  - `ChangePasswordForm.tsx`: Password update form calling `POST /auth/change-password`, clearing `mustChangePassword` in the in-memory auth store, and navigating to `/dashboard`.
+  - `PasswordField.tsx`: Reusable input with eye toggle icon for password visibility.
+  - `PasswordStrength.tsx`: 4-bar dynamic color strength meter (Weak/Fair/Good/Strong).
+  - `features/auth/index.ts`: Barrel export.
+- **Auth Store Integration:**
+  - `apps/web/src/lib/auth/index.ts`: Unified export for `useAuth`, `AuthProvider`, `authStore`, and route guards.
+- **Unblocks:** S12 (Dashboards) and S13 (Profile/Directory).
 
 ### S05 — Employee & Department (DONE)
 - **Routers mounted** in `apps/api/src/routes/index.ts`: `/employees`, `/departments`,
