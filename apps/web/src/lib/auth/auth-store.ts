@@ -1,4 +1,4 @@
-import type { Role } from '@dayflow/shared';
+import type { Role, WorkStatus } from '@dayflow/shared';
 
 export interface AuthUser {
   id: string;
@@ -11,6 +11,7 @@ export interface AuthUser {
   avatarUrl?: string | null;
   department?: string | null;
   jobTitle?: string | null;
+  workStatus?: WorkStatus;
 }
 
 type AuthListener = (user: AuthUser | null) => void;

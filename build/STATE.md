@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: 2026-08-22 · by: Chandan (S08)
+Last updated: 2026-08-22 · by: Mukunda (S12)
 
 ---
 
@@ -36,7 +36,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
 | S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
-| S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
+| S12 | Dashboards + analytics | DONE | Mukunda | feat/s12-dashboards | S10, S06–S08 | `/dashboard` (role-switched), `EmployeeDashboard`, `AdminDashboard`, `AttendanceDonut`, `DepartmentBarChart`, `useEmployeeDashboard`, `useAdminDashboard`, `WorkStatusBadge`, Recharts |
 | S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
 | S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
 | S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
@@ -60,6 +60,26 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 
 > As each session finishes, append a short block here so the next agent can code
 > against real names without re-reading everything. Example format below.
+
+### S12 — Dashboards & Analytics (DONE)
+- **Route (`apps/web/src/app/(protected)/dashboard/page.tsx`):**
+  - Role-switched dashboard rendering `<EmployeeDashboard />` for `EMPLOYEE` and `<AdminDashboard />` for `ADMIN` / `HR`.
+  - Wrapped in S10 `AppShell` with work status badge indicator rendered on user avatar and table rows.
+- **Components (`apps/web/src/features/dashboard/`):**
+  - `EmployeeDashboard.tsx`: PAGE 3 2×2 grid (Today's Attendance with live Check In/Out mutation, ADR-018 allocation-based Leave Balance progress bars, Recent Activity feed, Mon–Fri weekly attendance calendar grid with attendance rate) + bottom quick-stats strip (Total Working Days / Present / Absent / Leave).
+  - `AdminDashboard.tsx`: PAGE 4 dashboard with 4 `StatsCard`s (Total Employees, Present Today %, Pending Leave Requests linking to approvals, Total Payroll This Month from ADR-013/014 salary-engine totals), Recent Leave Requests table with inline Approve and Reject actions (with ADR-006 reason modal) and ADR-017 work status indicators (🟢/🟡/✈️), Attendance Donut chart, and Department Headcount bar chart.
+  - `charts/AttendanceDonut.tsx`: Recharts donut chart (Present `#10B981`, Absent `#EF4444`, Half-day `#F59E0B`, On Leave `#714B67`) with center present percentage label, date subtitle, and legend.
+  - `charts/DepartmentBarChart.tsx`: Department-wise headcount horizontal tracks with count badges.
+  - `features/dashboard/index.ts`: Barrel exports.
+- **Data Hooks (`apps/web/src/features/dashboard/hooks.ts`):**
+  - `useEmployeeDashboard()`: Fetches `GET /attendance/me?range=daily`, `GET /attendance/me?range=weekly`, `GET /leaves/balance/me`, `GET /leaves/me`, `GET /employees/me`. Exposes `checkIn()` and `checkOut(breakMinutes)` mutations with live refetch, authStore update, and toast feedback.
+  - `useAdminDashboard()`: Fetches `GET /attendance/summary`, `GET /leaves?limit=10`, `GET /payroll`, `GET /employees`, `GET /departments`. Exposes `approveLeave(id)` and `rejectLeave(id, reason)` mutations with live refetch and toast feedback.
+- **UI Primitives / Indicators:**
+  - `WorkStatusBadge.tsx` (`apps/web/src/components/ui/WorkStatusBadge.tsx`): Reusable ADR-017 indicator (🟢 `PRESENT`, 🟡 `ABSENT`, ✈️ `ON_LEAVE`).
+  - `Avatar.tsx`: Enhanced to support optional `workStatus?: WorkStatus` badge dot.
+  - `Header.tsx`: Passes `user.workStatus` into the header Avatar.
+- **Dependencies:** `recharts` added to `@dayflow/web`.
+- **Unblocks:** S13 (Profile/Directory), S14 (Attendance/Leave pages), S15 (Payroll pages).
 
 ### S11 — Auth Pages (DONE)
 - **Routes & Pages (`apps/web/src/app/(auth)/`):**
