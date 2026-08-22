@@ -62,6 +62,8 @@ next `TODO` session, open its file in `build/sessions/`, and follow it.
 | `docs/DATABASE.md` | Data model and ER diagram. |
 | `docs/DECISIONS.md` | Design decisions log (ADRs). Resolves any spec conflicts. |
 | `docs/UI_DESIGN_PROMPT.md` | Design system + page-by-page UI spec. |
+| `docs/design-board.svg` | The team's detailed design board (Excalidraw export). Captured authoritatively in `docs/DECISIONS.md` ADR-012…019. |
+| `docs/Dayflow.pdf` | Original problem statement. Board wins on conflicts. |
 | `apps/api/` | Express + TypeScript backend. |
 | `apps/web/` | Next.js 14 frontend. |
 | `packages/db/` | Prisma schema, migrations, seed. |

@@ -45,8 +45,23 @@ vaporware.
 8. **Rich demo seed.** ~30 employees across departments with months of realistic
    attendance, leave, and payroll history, so the demo looks like a live company.
 
+9. **Real Indian payroll engine.** A per-employee salary structure computed from a
+   monthly Wage — Basic, HRA, Standard Allowance, Performance Bonus, LTA, Fixed
+   Allowance, PF (employee + employer), Professional Tax — auto-recalculating when
+   the wage changes, with **attendance-driven payslips** (unpaid leave / missing days
+   reduce payable days). See `docs/DECISIONS.md` ADR-013/014.
+10. **System-generated identities.** Admin/HR create employees; the system mints a
+    Login ID (`OIJODO20220001` format) and a first-login password (ADR-012). A
+    single-company Settings page (name, logo, PF/tax rates) drives it all (ADR-016).
+
 Stretch (only if ahead of schedule; do not block core): natural-language leave
 requests / an HR assistant powered by an LLM. Tracked as an optional session.
+
+> **Design board.** The team's detailed design lives in the Excalidraw export
+> `Human Resource Management System - 8 hours.svg`. Its decisions are captured
+> authoritatively in `docs/DECISIONS.md` ADR-012…ADR-019 and enrich sessions
+> S01/S02/S04/S05/S06/S07/S08 and the UI sessions. Where the board and the PDF
+> conflict, the board wins.
 
 ## 3. Tech stack
 

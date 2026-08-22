@@ -80,6 +80,7 @@ in `build/sessions/`, and paste its **"▶ Copy-paste prompt"** into a fresh age
 | [`docs/DATABASE.md`](./docs/DATABASE.md) | Data model + ER diagram |
 | [`docs/DECISIONS.md`](./docs/DECISIONS.md) | Design decisions (authoritative tie-breaker) |
 | [`docs/UI_DESIGN_PROMPT.md`](./docs/UI_DESIGN_PROMPT.md) | Design system + page specs |
+| [`docs/design-board.svg`](./docs/design-board.svg) | The team's detailed design board (source for ADR-012…019) |
 
 ## Repository layout
 
