@@ -1,10 +1,17 @@
 /**
- * Dayflow web scaffold placeholder.
- *
- * The real Next.js 14 App Router + Tailwind application is scaffolded in session
- * S10 (build/sessions/S10-web-foundation.md), which replaces this tsconfig and file
- * with the Next project layout. This placeholder exists so the workspace resolves
- * and typechecks before then.
+ * Dayflow Web Foundation — Barrel Export
  */
 
 export const DAYFLOW_WEB_VERSION = '0.1.0';
+
+export * from './components/ui';
+export * from './components/layout/AppShell';
+export * from './components/layout/Sidebar';
+export * from './components/layout/Header';
+export * from './lib/api/client';
+export * from './lib/api/types';
+export * from './lib/auth/auth-store';
+export * from './lib/auth/AuthProvider';
+export * from './lib/auth/useAuth';
+export * from './lib/auth/route-guard';
+export * from './lib/format';
