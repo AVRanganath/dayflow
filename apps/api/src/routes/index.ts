@@ -5,6 +5,7 @@
  */
 import { Router } from 'express';
 import type { SuccessResponse } from '@dayflow/shared';
+import { attendanceRouter } from '../modules/attendance/attendance.route.js';
 
 export const router = Router();
 
@@ -15,7 +16,7 @@ router.get('/health', (_req, res) => {
 
 // TODO(S04): router.use('/auth', authRouter)
 // TODO(S05): router.use('/employees', employeesRouter); router.use('/departments', departmentsRouter); router.use('/company', companyRouter)
-// TODO(S06): router.use('/attendance', attendanceRouter)
+router.use('/attendance', attendanceRouter); // S06
 // TODO(S07): router.use('/leaves', leavesRouter)
 // TODO(S08): router.use('/payroll', payrollRouter)
 // TODO(S09): router.use('/notifications', notificationsRouter); router.use('/events', eventsRouter)
