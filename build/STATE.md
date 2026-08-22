@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: 2026-08-22 · by: Ranganath (S07)
+Last updated: 2026-08-22 · by: Ranganath (S13)
 
 ---
 
@@ -32,12 +32,12 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S05 | Employee & department | DONE | Chandan | feat/s05-employee | S03 | employee/department/company endpoints, `generateLoginId`, `computeWorkStatus`, row-level guard (see detail) |
 | S06 | Attendance module | DONE | Pramith | feat/s06-attendance | S03 | 5 attendance endpoints, exported `computeWorkStatus` helper (see detail) |
 | S07 | Leave module | DONE | Ranganath | feat/s07-leave | S03 | leave endpoints, balance logic, allocations (see detail) |
-| S08 | Payroll module | TODO | Chandan | — | S03 | payroll endpoints, salary engine, payslip PDF |
+| S08 | Payroll module | DONE | Chandan | feat/s08-payroll | S03 | payroll endpoints, salary engine, payslip PDF (see detail) |
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
-| S11 | Auth pages | TODO | Pramith | — | S10, S04 | `/signin`, onboarding, change-password |
+| S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
-| S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
+| S13 | Profile + directory | DONE | Pramith | feat/s13-profile-directory | S10, S05 | `/profile`, `/employees`, `/employees/:id` (view-only); `lib/employees.ts` fetchers (see detail) |
 | S14 | Attendance + leave pages | DONE | Mukunda | feat/s14-attendance-leave | S10, S06, S07 | `/attendance`, `/leaves`, `/leaves/approvals` pages; attendance/leaves api helpers; CSV export; NO SSE (S09 TODO) |
 | S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
 | S16 | Polish, tests, prod, demo | TODO | all four | — | all | Dockerfiles, tests, README, demo script |
@@ -113,6 +113,67 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
   employees, `/leaves/approvals` for ADMIN/HR); `/leaves/approvals` also redirects
   employees to `/dashboard` at the route, and the admin attendance table is hidden from
   employees. API remains the final gate.
+### S13 — Profile & Employee Directory (DONE)
+- **Routes added** (all under `apps/web/src/app/(protected)/` — the real S10 route
+  group; the session file's `app/(app)/` path was aspirational):
+  - `/profile` — PAGE 5, role-agnostic. Loads `GET /employees/me`. Header (120px avatar
+    w/ camera upload, name, designation, department badge, Employee ID, "Edit Profile")
+    + board tabs (ADR-015): **Resume**, **Private Info**, **Job Details**, and
+    **Salary Info (ADMIN-only, ADR-013)**. Tab components in `profile/_components/`:
+    `resume-tab.tsx`, `private-info-tab.tsx`, `job-details-tab.tsx`, `salary-info-tab.tsx`,
+    `avatar-upload.tsx`, `profile-field.tsx` (shared `ReadonlyField` locked-box).
+  - `/employees` — PAGE 6, **ADMIN/HR only**. Top bar (title + live count, search,
+    Department/Employment-Type/Status filters, "Add Employee"), a **table ⇄ card-grid**
+    toggle, and cursor pagination. Components in `employees/_components/`:
+    `employee-table.tsx`, `employee-card.tsx` (ADR-017 work-status icon), `employee-filters.tsx`
+    (debounced search), `employee-pagination.tsx`.
+  - `/employees/:id` — **view-only** employee page (read-only reuse of the profile view;
+    no edit controls). ADMIN/HR only; opened by clicking a directory row or card.
+- **API helper `apps/web/src/lib/employees.ts`** (typed, no `any`): `getMe()`,
+  `updateMe(body)` (`PUT /employees/me`, shared `UpdateProfileSchema`), `getEmployee(id)`,
+  `uploadProfilePicture(id, file)` (reads the File → base64 **data URL** → `PATCH
+  /employees/:id/profile-picture` JSON `{ url }`; the stub schema `z.string().url()`
+  accepts data URLs and returns them verbatim, so the picture round-trips), `listEmployees(params)`
+  (**reads the raw envelope** to get `meta.nextCursor` — S10's `api.get` drops `meta`),
+  `listDepartments()`, plus the `Employee`/`Department`/`EmployeePage` response types
+  (declared here — `@dayflow/shared` only infers *input* types).
+- **Role-gate pattern:** the directory + view-only route redirect non-management users
+  (`role !== ADMIN|HR`) to `/dashboard` in a `useEffect` and render a spinner meanwhile;
+  the S10 sidebar already hides the nav item for employees; the API's `requireRole` +
+  row-level guard are the final gate. **Salary Info tab** is gated on `role === 'ADMIN'`.
+- **Work-status icon source:** the `workStatus` field (`PRESENT|ABSENT|ON_LEAVE`, ADR-017)
+  on each `/employees` row and on `/employees/me` → 🟢 / 🟡 / ✈️ on the directory card
+  (top-right) and the view-only header.
+- **Resume-tab fields:** **found** — `about/whatILove/hobbies/skills/certifications` are on
+  the `/employees/me` payload and self-editable via `PUT /employees/me` (verified end-to-end
+  against the seeded DB). `skills`/`certifications` are **string arrays** (comma-separated
+  in the UI), not the API.md doc's single string — the shared schema (`z.array(z.string())`)
+  is authoritative.
+- **No shared-schema changes.** One web-only build fix: `apps/web/next.config.mjs` gained a
+  webpack `resolve.extensionAlias` so `@dayflow/shared`'s NodeNext `.js` import specifiers
+  resolve to their `.ts` sources when webpack transpiles the package (S13 is the first web
+  code to import *runtime* values from the shared barrel, which surfaced this latent gap —
+  UI-only imports before never triggered it). Not a contract change.
+- **Note for S15 (payroll UI):** the Salary Info tab renders the ADR-013 read-only structure
+  with `—` placeholders because `/employees/me` carries **no** salary data — wire it to the
+  payroll module when that lands. Job Details shows the reporting manager as `managerId`
+  (an employee cannot read another employee's record to resolve a name; row-level guard).
+### S11 — Auth Pages (DONE)
+- **Routes & Pages (`apps/web/src/app/(auth)/`):**
+  - `(auth)/layout.tsx`: Split-screen public auth shell (left 50% brand panel with plum-to-dark-plum gradient, Montserrat Dayflow wordmark, Caveat Brush 52px marker headline with `#F0B93F` marker highlight behind "perfectly aligned.", 340px ring + 120px rotated square geometry, Caveat Brush 22px footnote; right panel hosting auth forms). Auto-redirects authenticated users to `/dashboard` (or `/change-password` if `mustChangePassword=true`).
+  - `/signin` (`signin/page.tsx`): "Welcome back" page rendering `SigninForm`.
+  - `/signup` (`signup/page.tsx`): "Set up your company" page rendering `OnboardingForm` (ADR-012 first-run company setup; displays registration complete notice with redirect to `/signin` if `403 REGISTRATION_CLOSED`).
+  - `/change-password` (`change-password/page.tsx`): Forced first-login password update page rendering `ChangePasswordForm`.
+- **Components (`apps/web/src/features/auth/`):**
+  - `SigninForm.tsx`: React Hook Form + Zod `SigninSchema` with support for email OR system-generated `loginId`, show/hide password toggle, and red error banner on `INVALID_CREDENTIALS`.
+  - `OnboardingForm.tsx`: Company & Admin registration with full-name splitting, password confirmation, dynamic strength meter, and `REGISTRATION_CLOSED` handling.
+  - `ChangePasswordForm.tsx`: Password update form calling `POST /auth/change-password`, clearing `mustChangePassword` in the in-memory auth store, and navigating to `/dashboard`.
+  - `PasswordField.tsx`: Reusable input with eye toggle icon for password visibility.
+  - `PasswordStrength.tsx`: 4-bar dynamic color strength meter (Weak/Fair/Good/Strong).
+  - `features/auth/index.ts`: Barrel export.
+- **Auth Store Integration:**
+  - `apps/web/src/lib/auth/index.ts`: Unified export for `useAuth`, `AuthProvider`, `authStore`, and route guards.
+- **Unblocks:** S12 (Dashboards) and S13 (Profile/Directory).
 
 ### S05 — Employee & Department (DONE)
 - **Routers mounted** in `apps/api/src/routes/index.ts`: `/employees`, `/departments`,
@@ -285,6 +346,79 @@ Files under `apps/api/src/modules/attendance/` (layered route→controller→ser
   placeholder `index.ts`, which is deleted).
 - Unblocks S04–S08 (all can now build feature routers/services against real
   `AppError`, `requireAuth`/`requireRole` stubs, `prisma`, `redis`, `logger`).
+
+### S08 — Payroll module (DONE)
+- **Owns:** `apps/api/src/modules/payroll/` (`payroll.routes.ts`, `payroll.controller.ts`,
+  `payroll.service.ts`, `payroll.calc.ts`, `payslip.pdf.ts`, `payroll.schema.ts`).
+  Mounted at `/api/v1/payroll` via one edit to the S03-owned `apps/api/src/routes/index.ts`
+  (`router.use('/payroll', payrollRouter)`, replacing its TODO(S08) line).
+- **Routes:**
+  - `GET /payroll/me` — any authenticated role, read-only. Caller's own ADR-013
+    component breakdown (`currency, monthlyWage, earnings{basic,hra,standardAllowance,
+    performanceBonus,lta,fixedAllowance,gross}, deductions{pfEmployee,professionalTax,
+    total}, employerContributions{pfEmployer}, monthlyNet, history[]` — history newest
+    first, each with `month ("YYYY-MM"), payableDays, workingDays, netSalary, status,
+    payslipUrl`). No write path.
+  - `GET /payroll` — ADMIN/HR only. `?month=&year=` filter + cursor pagination
+    (`cursor`/`limit`, reusing `@dayflow/shared`'s `PayrollListQuerySchema` merged with
+    `PaginationQuerySchema` — no shared-contract change needed, both already existed).
+  - `GET /payroll/:id/payslip` — owner or ADMIN/HR (row-level ownership check in the
+    service, since RBAC middleware can't express "your own record"; non-owner
+    non-management → `403`). Streams a PDF (`Content-Type: application/pdf`) rendered
+    from the existing `PayrollRecord` snapshot (no on-the-fly recompute — the snapshot
+    already encodes ADR-014 proration from when it was generated, e.g. by the S01 seed;
+    there is no "run payroll for this month" endpoint in this session's scope).
+  - `GET /payroll/:employeeId/salary-structure` — ADMIN-only (ADR-001). Returns the
+    detailed shape from `docs/API.md §5` (`earnings.<name>.{computationType,value,amount}`,
+    `deductions.<name>.{value,amount}`, `gross`, `monthlyNet`, `totalDeductions`).
+  - `PUT /payroll/:employeeId/salary-structure` — ADMIN-only; HR/EMPLOYEE get `403`.
+    Body `{ wage, config? }` (`SalaryStructureSchema` from `@dayflow/shared`, unchanged).
+    Always recomputes via `computeSalary` — never trusts a client-sent total. Upserts
+    `SalaryStructure`.
+  - **Route order:** `/:id/payslip` is registered before `/:employeeId/salary-structure`
+    per the session spec's guidance, though the two don't actually collide in Express
+    (different literal trailing segment).
+- **`payroll.calc.ts` (pure, unit-verified, no Prisma/Express import except `Prisma.Decimal`
+  and the local `ValidationError`):**
+  - `computeSalary(wage, cfg?)` — ADR-013: `basic = basicPct% of wage` (default 50),
+    `hra = hraPctOfBasic% of basic` (default 50), `standardAllowance` fixed (default 4167),
+    `performanceBonus`/`lta` = their pct of basic (default 8.33 each),
+    `fixedAllowance = wage − sum(all above)` (balancer, so `gross === wage`),
+    `pfEmployee`/`pfEmployer = pfPct% of basic` (default 12 each; only `pfEmployee` is
+    deducted from take-home), `professionalTax` fixed (default 200),
+    `monthlyNet = gross − pfEmployee − professionalTax`. All money is `Prisma.Decimal`,
+    rounded to 2dp per component. Throws `ValidationError` (400) if `monthlyNet` would
+    be negative. Verified against the spec's exact numbers (wage 50,000 → basic 25,000,
+    hra 12,500, performanceBonus/lta 2,082.50, pfEmployee 3,000, professionalTax 200,
+    monthlyNet 46,800) — see `build/logs/S08-log.md` for how.
+  - `prorateByPayableDays(monthlyNet, payableDays, workingDays)` — ADR-014:
+    `round(monthlyNet × payableDays / workingDays)` to the nearest whole rupee
+    (`Prisma.Decimal.ROUND_HALF_UP`); `workingDays <= 0` short-circuits to
+    `round(monthlyNet)`. Verified against the doc example (46,800 × 22/23 → 44,765) and
+    against every one of the 90 seeded `PayrollRecord` rows.
+- **`payslip.pdf.ts`:** `renderPayslipPdf(data: PayslipData): Promise<Buffer>` using
+  `pdfkit`. INR-formatted via `Intl.NumberFormat('en-IN', {style:'currency',
+  currency:'INR'})`. Pure function of a plain `PayslipData` object — no Prisma import —
+  so it's independently callable/testable.
+- **S09 audit hook:** `auditPayrollUpdate({ actorUserId, employeeId, oldValues:
+  SalaryStructure|null, newValues: SalaryStructure })`, exported from
+  `payroll.service.ts`. Currently a no-op with a `// TODO(S09): persist an AuditLog row +
+  notify()` comment; called once, after a successful `PUT .../salary-structure` upsert.
+  S09 should replace the body with a real `AuditLog` write (do not change the call site
+  or signature unless the contract needs to grow).
+- **New dependency:** `pdfkit` (+ `@types/pdfkit` dev) added to `apps/api/package.json`;
+  `package-lock.json` updated accordingly (intentional — this is the point of the
+  dependency addition, not a stray regeneration).
+- **No `@dayflow/shared` changes.** `SalaryStructureSchema` and `PayrollListQuerySchema`
+  already covered everything needed; the list-query + pagination merge lives locally in
+  `payroll.schema.ts` (module-level composition, not a shared-contract change).
+- **Verification note (S04 not done yet):** `requireAuth`/`requireRole` are still S03
+  stubs that unconditionally throw `401`, so no curl-based acceptance criterion could be
+  run end-to-end with real tokens/roles. See `build/logs/S08-log.md` for exactly what was
+  verified instead (direct calls to `payroll.calc.ts`/`payroll.service.ts` against the
+  real seeded Postgres, plus a route-wiring smoke test confirming all 5 routes 401
+  correctly instead of 404/500). **Unblocks:** S09 (audit hook to wire), S15 (payroll UI
+  can build against these exact response shapes) — both still also need S04 for real auth.
 
 ### S07 — Leave module (DONE)
 - **Router:** `apps/api/src/modules/leave/leave.routes.ts` exports `leaveRouter`,
