@@ -18,6 +18,7 @@ export default tseslint.config(
       '**/*.config.js',
       '**/*.config.cjs',
       'packages/db/prisma/generated/**',
+      'UI/**',
     ],
   },
   eslint.configs.recommended,

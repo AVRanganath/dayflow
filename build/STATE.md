@@ -34,7 +34,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S07 | Leave module | TODO | Ranganath | — | S03 | leave endpoints, balance logic, allocations |
 | S08 | Payroll module | TODO | Chandan | — | S03 | payroll endpoints, salary engine, payslip PDF |
 | S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
-| S10 | Web foundation | TODO | Pramith | — | S02 | api client, auth context, layout, design tokens |
+| S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
 | S11 | Auth pages | TODO | Pramith | — | S10, S04 | `/signin`, onboarding, change-password |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
 | S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
@@ -68,6 +68,31 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 - Base router mounted at `/api/v1`. Health: `GET /api/v1/health` → `{ success: true, data: { status: "ok" } }`.
 - Auth middleware STUBS exist at `apps/api/src/middleware/auth.ts` — S04 fills them in.
 -->
+
+### S10 — Web foundation (DONE)
+- **App framework:** Next.js 14 (App Router) in `apps/web`. Dev server on port 3000 (`npm run dev -w apps/web`).
+- **Design Tokens (`apps/web/tailwind.config.ts`):**
+  - Colors: `primary` (`#714B67`), `primary-hover` (`#5B3C53`), `sidebar` (`#2F1F2B`), `primary-tint` (`#F4EEF3`), `primary-tint-border` (`#D6C4D1`), `secondary` (`#017E84`), `secondary-tint` (`#E0F0F1`), `secondary-on-dark` (`#8FC9CC`), `accent` (`#F0B93F`), `success` (`#10B981`), `warning` (`#F59E0B`), `danger` (`#EF4444`), `background` (`#F5F6F7`), `card` (`#FFFFFF`), `zebra` (`#FAFAFB`), `border` (`#DEE2E6`), `hairline` (`#EDEFF1`), and full text color hierarchy.
+  - Fonts: `sans` (Roboto 300/400/500/700), `display` (Montserrat 600/700/800), `marker` (Caveat Brush 400).
+  - Radii: `sm` (3px), `DEFAULT`/`card`/`btn` (4px), `container` (6px), `pill` (99px).
+  - Shadows: `card`, `hero`, `auth`, `modal`, `card-hover`.
+- **API client (`apps/web/src/lib/api/client.ts`):**
+  - Typed methods: `api.get<T>`, `api.post<T>`, `api.put<T>`, `api.patch<T>`, `api.del<T>`, `api.refresh()`.
+  - Unwraps `{ success: true, data }`; throws `ApiError(code, message, details, status)` on failure.
+  - Single-flight auto-refresh on 401 via `POST /auth/refresh` (ADR-007) with retry; clears session and redirects to `/signin` if refresh fails.
+- **Auth subsystem (`apps/web/src/lib/auth/`):**
+  - `auth-store.ts`: in-memory token and user store (`setSession`, `clearSession`, `getAccessToken`, `getUser`).
+  - `AuthProvider.tsx`: React context with silent rehydration on mount. Exposes `{ user, isLoading, isAuthenticated, login, logout, refreshSession }`.
+  - `useAuth()` hook.
+  - `RequireAuth` and `RequireRole` route guards.
+- **Layout components (`apps/web/src/components/layout/`):**
+  - `Sidebar.tsx`: dark plum 260px sidebar with role-filtered nav items (Employee vs Admin/HR).
+  - `Header.tsx`: page title, marker greeting, notification bell with red dot, avatar dropdown.
+  - `AppShell.tsx`: responsive layout handling desktop sidebar, mobile slide-over drawer, and mobile bottom nav.
+- **11 UI Primitives (`apps/web/src/components/ui/`):**
+  - `Button`, `Input`, `Select`, `Textarea`, `StatusBadge`, `DataTable`, `Modal`, `Avatar`, `EmptyState`, `Toast` / `ToastProvider` (`useToast`), `ProgressBar`, `StatsCard`.
+- **Formatters (`apps/web/src/lib/format.ts`):**
+  - `formatINR(amount)` (e.g. ₹42,50,000), `formatHours(val, isMinutes?)`, `formatDate(date)`, `initials(name)`, `getAvatarColor(name)`.
 
 ### S02 — Shared package `@dayflow/shared` (DONE)
 Import everything from `@dayflow/shared`. Every type is `z.infer` from its schema —
