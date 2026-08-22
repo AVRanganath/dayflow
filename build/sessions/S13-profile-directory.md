@@ -25,7 +25,7 @@ system and app shell — no new global chrome. No API changes.
 - S10 is `DONE` in `build/STATE.md` (Next 14 App Router scaffold on port **3000**,
   Tailwind + design tokens from the UI spec, `@dayflow/web`'s `apiClient` with
   auth/refresh wired, auth/session context exposing the current user + role, and the
-  shared app shell: dark indigo sidebar, header bar, Avatar, StatusBadge, DataTable,
+  shared app shell: dark plum sidebar, header bar, Avatar, StatusBadge, DataTable,
   Modal, form fields, EmptyState, Toast — the reusable components in the UI spec §
   "Reusable Components Needed"). If any are missing, stop and report.
 - S05 is `DONE`: `GET /employees` (search + `departmentId` filter + cursor

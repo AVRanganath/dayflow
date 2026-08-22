@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Montserrat:wght@600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;font-family:'Roboto',sans-serif;background:#F5F6F7} a{color:#714B67;text-decoration:none;font-weight:600} a:hover{color:#5B3C53} input:focus,select:focus{outline:2px solid #714B67;outline-offset:-1px}</style>
+</helmet>
+<div style="display:flex;align-items:stretch;min-height:100vh">
+<dc-import name="Sidebar" role="admin" active="Employees" user-name="Sarah Mitchell" hint-size="260px,100vh"></dc-import>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="background:#FFFFFF;border-bottom:1px solid #DEE2E6;padding:16px 32px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-family:'Montserrat',sans-serif;letter-spacing:-0.2px;font-size:18px;font-weight:700;color:#383E45">Employees</div>
+      <span style="font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px;background:#F4EEF3;color:#714B67">148</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:50%;background:#8A5B7E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">SM</div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C757D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+    </div>
+  </header>
+  <main style="padding:32px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="position:relative;flex:1;min-width:260px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#98A0A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:12px"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+        <input type="text" placeholder="Search by name, ID, or department..." style="width:100%;box-sizing:border-box;padding:10px 12px 10px 38px;border:1px solid #DEE2E6;border-radius:4px;font-size:14px;font-family:'Roboto',sans-serif;background:#FFFFFF">
+      </div>
+      <select style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:13px;font-family:'Roboto',sans-serif;background:#FFFFFF;color:#383E45"><option>Department: All</option><option>Engineering</option><option>Design</option><option>Marketing</option><option>HR</option><option>Finance</option></select>
+      <select style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:13px;font-family:'Roboto',sans-serif;background:#FFFFFF;color:#383E45"><option>Type: All</option><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Intern</option></select>
+      <select style="padding:10px 12px;border:1px solid #DEE2E6;border-radius:4px;font-size:13px;font-family:'Roboto',sans-serif;background:#FFFFFF;color:#383E45"><option>Status: Active</option><option>Inactive</option><option>All</option></select>
+      <button style="padding:10px 18px;background:#714B67;color:#FFFFFF;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif;display:flex;align-items:center;gap:8px" style-hover="background:#5B3C53"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add Employee</button>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #DEE2E6;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow:hidden">
+      <div style="display:grid;grid-template-columns:2.4fr 0.9fr 1.2fr 1.6fr 1fr 0.9fr 1fr;padding:12px 24px;font-size:11px;font-weight:600;color:#6C757D;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #DEE2E6;background:#F5F6F7">
+        <div>Employee</div><div>ID</div><div>Department</div><div>Designation</div><div>Join Date</div><div>Status</div><div style="text-align:right">Actions</div>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+        <div style="{{ r.rowStyle }}" style-hover="background:#F5F6F7">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0">
+            <div style="{{ r.avatarStyle }}">{{ r.initials }}</div>
+            <div style="min-width:0"><div style="font-size:13px;font-weight:600;color:#383E45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font-size:12px;color:#6C757D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.email }}</div></div>
+          </div>
+          <div style="font-size:13px;color:#6C757D;align-self:center">{{ r.id }}</div>
+          <div style="align-self:center"><span style="{{ r.deptBadge }}">{{ r.dept }}</span></div>
+          <div style="font-size:13px;color:#383E45;align-self:center">{{ r.role }}</div>
+          <div style="font-size:13px;color:#6C757D;align-self:center">{{ r.joined }}</div>
+          <div style="align-self:center"><span style="{{ r.statusBadge }}">{{ r.status }}</span></div>
+          <div style="display:flex;justify-content:flex-end;gap:6px;align-items:center">
+            <button title="View" style="width:28px;height:28px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;cursor:pointer;color:#6C757D;display:flex;align-items:center;justify-content:center" style-hover="background:#EDEFF1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+            <button title="Edit" style="width:28px;height:28px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;cursor:pointer;color:#6C757D;display:flex;align-items:center;justify-content:center" style-hover="background:#EDEFF1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"></path></svg></button>
+            <button title="More" style="width:28px;height:28px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;cursor:pointer;color:#6C757D;display:flex;align-items:center;justify-content:center" style-hover="background:#EDEFF1"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg></button>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid #DEE2E6">
+        <div style="font-size:13px;color:#6C757D">Showing 1–10 of 148</div>
+        <div style="display:flex;gap:6px">
+          <button style="padding:6px 12px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;font-size:13px;color:#98A0A8;font-family:'Roboto',sans-serif">Prev</button>
+          <button style="padding:6px 12px;border:1px solid #714B67;background:#714B67;color:#FFFFFF;border-radius:4px;font-size:13px;font-weight:600;font-family:'Roboto',sans-serif;cursor:pointer">1</button>
+          <button style="padding:6px 12px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;font-size:13px;color:#383E45;font-family:'Roboto',sans-serif;cursor:pointer" style-hover="background:#F5F6F7">2</button>
+          <button style="padding:6px 12px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;font-size:13px;color:#383E45;font-family:'Roboto',sans-serif;cursor:pointer" style-hover="background:#F5F6F7">3</button>
+          <span style="padding:6px 4px;font-size:13px;color:#98A0A8">…</span>
+          <button style="padding:6px 12px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;font-size:13px;color:#383E45;font-family:'Roboto',sans-serif;cursor:pointer" style-hover="background:#F5F6F7">15</button>
+          <button style="padding:6px 12px;border:1px solid #DEE2E6;background:#FFFFFF;border-radius:4px;font-size:13px;color:#383E45;font-family:'Roboto',sans-serif;cursor:pointer" style-hover="background:#F5F6F7">Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const badge = (bg, c) => 'font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;display:inline-block;background:' + bg + ';color:' + c;
+    const dept = { Engineering: badge('#E0F0F1','#017E84'), Design: badge('#F2EBF0','#7B4A6E'), Marketing: badge('#FEF3C7','#B45309'), HR: badge('#FCE7F3','#BE185D'), Finance: badge('#D1FAE5','#065F46') };
+    const stat = { Active: badge('#D1FAE5','#065F46'), Inactive: badge('#FEE2E2','#B91C1C') };
+    const av = (bg) => 'width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#FFFFFF;background:' + bg;
+    const colors = ['#714B67','#10B981','#F59E0B','#8A5B7E','#EF4444','#0EA5E9','#EC4899','#14B8A6'];
+    const zebra = 'display:grid;grid-template-columns:2.4fr 0.9fr 1.2fr 1.6fr 1fr 0.9fr 1fr;padding:12px 24px;border-bottom:1px solid #EDEFF1;align-items:center';
+    const data = [
+      ['John Doe','EMP001','Engineering','Senior Software Engineer','02 Jun 2022','Active'],
+      ['Priya Sharma','EMP014','Design','Product Designer','15 Jan 2023','Active'],
+      ['Arjun Mehta','EMP027','Engineering','Backend Engineer','03 Apr 2023','Active'],
+      ['Neha Gupta','EMP033','Marketing','Growth Manager','21 Aug 2023','Active'],
+      ['Rahul Verma','EMP041','Engineering','DevOps Engineer','09 Oct 2023','Active'],
+      ['Kavya Nair','EMP052','HR','HR Executive','12 Feb 2024','Active'],
+      ['Vikram Singh','EMP063','Finance','Financial Analyst','30 May 2024','Active'],
+      ['Ananya Iyer','EMP078','Design','UX Researcher','18 Sep 2024','Inactive'],
+      ['Rohan Desai','EMP091','Engineering','Frontend Engineer','06 Jan 2025','Active'],
+      ['Sneha Patil','EMP104','Marketing','Content Lead','24 Mar 2025','Active']
+    ];
+    return { rows: data.map((d, i) => ({
+      name: d[0], initials: d[0].split(' ').map(w=>w[0]).join(''), email: d[0].toLowerCase().replace(' ','.') + '@dayflow.com',
+      id: d[1], dept: d[2], deptBadge: dept[d[2]], role: d[3], joined: d[4], status: d[5], statusBadge: stat[d[5]],
+      avatarStyle: av(colors[i % colors.length]),
+      rowStyle: zebra + (i % 2 ? ';background:#FAFAFB' : '')
+    })) };
+  }
+}
+</script>
+</body>
+</html>
