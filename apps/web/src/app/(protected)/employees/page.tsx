@@ -16,6 +16,7 @@ import { EmployeeFilters, type EmployeeFilterValues } from './_components/employ
 import { EmployeeTable } from './_components/employee-table';
 import { EmployeeCard } from './_components/employee-card';
 import { EmployeePagination } from './_components/employee-pagination';
+import { CreateEmployeeModal } from './_components/create-employee-modal';
 
 const PAGE_SIZE = 20;
 const EMPTY_FILTERS: EmployeeFilterValues = {
@@ -45,6 +46,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'table' | 'grid'>('table');
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Cursor stack: index 0 = first page (no cursor). `cursors[i]` is the cursor
   // that produced page i. `nextCursor` from meta drives forward paging.
@@ -182,7 +184,11 @@ export default function EmployeesPage() {
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
-          <Button variant="primary" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => setCreateOpen(true)}
+          >
             Add Employee
           </Button>
         </div>
@@ -231,6 +237,17 @@ export default function EmployeesPage() {
           onPrev={handlePrev}
         />
       )}
+
+      <CreateEmployeeModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        departments={departments}
+        onCreated={() => {
+          setCursorStack([undefined]);
+          setPageIndex(0);
+          void fetchPage(undefined);
+        }}
+      />
     </div>
   );
 }
