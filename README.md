@@ -33,22 +33,71 @@ Dayflow digitizes the employee lifecycle for two roles — **Admin/HR** and
 See **[`plan.md`](./plan.md) §2** for the differentiators that make this more than a
 CRUD demo.
 
-## Quick start
+## Setup guide
+
+### Prerequisites
+
+- **Node.js** `>=18.17` — the repo pins `20` in `.nvmrc` (`nvm use`)
+- **npm** `11.x` (declared `packageManager`, npm workspaces monorepo)
+- **Docker** + **Docker Compose** — for local Postgres 16 and Redis 7
+
+### 1. Install dependencies
 
 ```bash
-# 1. Install (npm workspaces monorepo)
 npm install
+```
 
-# 2. Start infrastructure (Postgres + Redis)
+Installs every workspace (`apps/*`, `packages/*`) from the single root
+`package-lock.json` in one pass.
+
+### 2. Configure environment variables
+
+```bash
+cp .env.example .env                              # reference copy (documents everything)
+cp apps/api/.env.example apps/api/.env             # API reads this one
+cp apps/web/.env.local.example apps/web/.env.local # Web reads this one
+```
+
+The defaults already match `docker-compose.yml`, so no edits are required for
+local development. Key variables:
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `DATABASE_URL` | `apps/api/.env` | Prisma/Postgres connection string |
+| `REDIS_URL` | `apps/api/.env` | Cache, rate limiting, pub/sub |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | `apps/api/.env` | Sign auth tokens — change for anything non-local |
+| `CORS_ORIGIN` | `apps/api/.env` | Origin allowed to call the API (the web app) |
+| `NEXT_PUBLIC_API_URL` | `apps/web/.env.local` | Base API URL the web app calls (must include `/api/v1`) |
+
+### 3. Start infrastructure (Postgres + Redis)
+
+```bash
 docker compose up -d
+```
 
-# 3. Set up the database (schema + rich demo seed)
-npm run db:migrate
-npm run db:seed
+Brings up `dayflow-postgres` (`localhost:5432`, db `dayflow`) and
+`dayflow-redis` (`localhost:6379`) with health checks and named volumes, so
+data survives restarts. Check status with `docker compose ps`.
 
-# 4. Run the full stack (api + web)
+### 4. Set up the database
+
+```bash
+npm run db:generate   # generate the Prisma client
+npm run db:migrate     # apply schema migrations (prisma migrate dev)
+npm run db:seed        # load base data + rich demo dataset
+```
+
+`npm run db:studio` opens Prisma Studio (a GUI over the database) if you want
+to inspect data directly.
+
+### 5. Run the app
+
+```bash
 npm run dev
 ```
+
+Runs `api` and `web` together via Turborepo. Individually:
+`npm run dev --workspace @dayflow/api` or `--workspace @dayflow/web`.
 
 - Web: http://localhost:3000 · API: http://localhost:8000/api/v1 ·
   Health: http://localhost:8000/api/v1/health
@@ -56,7 +105,17 @@ npm run dev
 **Demo credentials (seeded):** Admin `admin@dayflow.com` / `Admin@123` ·
 Employee `john@dayflow.com` / `Employee@123`
 
-> Steps 1–4 come online as the build sessions land — see current progress in
+### Other useful commands
+
+```bash
+npm run build      # build all workspaces
+npm run typecheck  # tsc --noEmit across workspaces
+npm run lint        # eslint .
+npm run format       # prettier --write .
+npm run test         # vitest across workspaces
+```
+
+> Some pieces come online as the build sessions land — see current progress in
 > **[`build/STATE.md`](./build/STATE.md)**.
 
 ## How this repo is built
@@ -68,6 +127,228 @@ live progress in **[`build/STATE.md`](./build/STATE.md)**.
 
 To run the next session: open `build/STATE.md`, find the next `TODO`, open its file
 in `build/sessions/`, and paste its **"▶ Copy-paste prompt"** into a fresh agent chat.
+
+## Database design
+
+PostgreSQL, modeled with Prisma (`packages/db/prisma/schema.prisma`). Full
+prose detail — salary computation, seeding strategy, ADR references — lives in
+**[`docs/DATABASE.md`](./docs/DATABASE.md)**; the schematic below is generated
+straight from the schema, field by field.
+
+```mermaid
+erDiagram
+    Company ||--o{ Employee : has
+    User ||--o| Employee : is
+    User ||--o{ AuditLog : performs
+    User ||--o{ Notification : receives
+    Department ||--o{ Employee : contains
+    Employee ||--o{ Employee : manages
+    Employee ||--o{ Attendance : logs
+    Employee ||--o{ LeaveRequest : submits
+    Employee ||--o{ LeaveRequest : reviews
+    Employee ||--o{ LeaveBalance : has
+    Employee ||--o| SalaryStructure : has
+    Employee ||--o{ PayrollRecord : has
+
+    Company {
+        uuid id PK
+        string name
+        string logoUrl "nullable"
+        string loginIdPrefix "default OI"
+        json settings "PF %, tax, defaults"
+    }
+
+    User {
+        uuid id PK
+        string email UK
+        string loginId UK
+        string passwordHash
+        enum role "ADMIN | HR | EMPLOYEE"
+        bool mustChangePassword "default true"
+        bool isEmailVerified
+        string refreshToken "nullable"
+        bool isActive
+    }
+
+    Employee {
+        uuid id PK
+        uuid userId FK "UK, 1:1 User"
+        uuid companyId FK "nullable"
+        uuid departmentId FK "nullable"
+        uuid managerId FK "self-relation, nullable"
+        string employeeId UK
+        string employeeCode "nullable"
+        string firstName
+        string lastName
+        string email "work email"
+        string personalEmail "nullable"
+        string phone "nullable"
+        date dateOfBirth "nullable"
+        enum gender "nullable"
+        enum maritalStatus "nullable"
+        string designation "nullable"
+        date dateOfJoining
+        enum employmentType "FULL_TIME..."
+        int workingDaysPerWeek "default 5"
+        string bankAccountNumber "nullable"
+        string panNumber "nullable"
+        string[] skills
+        string[] certifications
+    }
+
+    Department {
+        uuid id PK
+        string name UK
+        string description "nullable"
+    }
+
+    Attendance {
+        uuid id PK
+        uuid employeeId FK
+        date date
+        datetime checkIn "nullable"
+        datetime checkOut "nullable"
+        enum status "PRESENT | ABSENT | HALF_DAY | ON_LEAVE"
+        int breakMinutes "default 0"
+        decimal hoursWorked "5,2 nullable"
+        decimal extraHours "5,2 nullable"
+    }
+
+    LeaveRequest {
+        uuid id PK
+        uuid employeeId FK
+        uuid reviewedById FK "nullable, -> Employee"
+        enum leaveType "PAID | SICK | UNPAID..."
+        date startDate
+        date endDate
+        decimal totalDays "5,2"
+        string attachmentUrl "nullable"
+        enum status "PENDING | APPROVED | REJECTED"
+        datetime reviewedAt "nullable"
+    }
+
+    LeaveBalance {
+        uuid id PK
+        uuid employeeId FK
+        enum leaveType
+        int year
+        decimal totalAllowed "5,2"
+        decimal used "5,2 default 0"
+    }
+
+    SalaryStructure {
+        uuid id PK
+        uuid employeeId FK "UK, 1:1"
+        decimal monthlyWage "12,2"
+        decimal basic "12,2"
+        decimal hra "12,2"
+        decimal standardAllowance "12,2"
+        decimal performanceBonus "12,2"
+        decimal lta "12,2"
+        decimal fixedAllowance "12,2 balancer"
+        decimal pfEmployeePct "12,2"
+        decimal pfEmployerPct "12,2"
+        decimal professionalTax "12,2"
+    }
+
+    PayrollRecord {
+        uuid id PK
+        uuid employeeId FK
+        int month
+        int year
+        decimal grossSalary "12,2"
+        decimal netSalary "12,2 prorated"
+        decimal totalDeductions "12,2"
+        int workingDays
+        decimal payableDays "5,2"
+        enum status "DRAFT | PROCESSED | PAID"
+        datetime paidAt "nullable"
+    }
+
+    AuditLog {
+        uuid id PK
+        uuid userId FK
+        string action
+        string entity
+        string entityId
+        json oldValues "nullable"
+        json newValues "nullable"
+        datetime createdAt
+    }
+
+    Notification {
+        uuid id PK
+        uuid userId FK
+        string type "e.g. LEAVE_APPROVED"
+        string title
+        string body
+        bool isRead "default false"
+    }
+```
+
+| Table | Purpose | Unique / composite keys |
+|-------|---------|--------------------------|
+| `Company` | Single-company (MVP) branding + payroll defaults | — |
+| `User` | Auth identity — email/Login ID, password hash, role, refresh token | `email`, `loginId` |
+| `Employee` | HR profile — personal, job, manager (self-relation), resume fields | `userId`, `employeeId` |
+| `Department` | Organizational grouping for employees | `name` |
+| `Attendance` | Daily check-in/out, hours worked, extra hours, breaks | `[employeeId, date]` |
+| `LeaveRequest` | Leave applications — type, dates, status, reviewer | — |
+| `LeaveBalance` | Yearly allowance vs. used, per employee/leave type | `[employeeId, leaveType, year]` |
+| `SalaryStructure` | Active per-employee salary components, derived from wage | `employeeId` |
+| `PayrollRecord` | Monthly computed payslip snapshot | `[employeeId, month, year]` |
+| `AuditLog` | System action trail — who did what, to what, when | — |
+| `Notification` | In-app notifications, mirrored over SSE (and optionally email) | — |
+
+**Enums:** `Role` (`ADMIN`, `HR`, `EMPLOYEE`) · `Gender` · `MaritalStatus` ·
+`EmploymentType` (`FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERN`) ·
+`AttendanceStatus` · `LeaveType` (`PAID`, `SICK`, `UNPAID`, `CASUAL`,
+`MATERNITY`, `PATERNITY`) · `LeaveStatus` · `PayrollStatus`.
+
+Migrations live in `packages/db/prisma/migrations/`; apply with
+`npm run db:migrate` (dev) or `prisma migrate deploy` (CI/production).
+
+## Repository layout
+
+```text
+dayflow/
+├── apps/
+│   ├── api/                     # Express + TypeScript backend
+│   │   └── src/
+│   │       ├── config/          # env parsing/validation
+│   │       ├── lib/             # jwt, password, prisma client, redis, logger, upload...
+│   │       ├── middleware/      # auth, error handling, rate limiting, request-id, validate
+│   │       ├── modules/         # one folder per domain: auth, employee, attendance,
+│   │       │                    #   leave, payroll, department, company, notification,
+│   │       │                    #   realtime (SSE), audit
+│   │       ├── routes/          # route aggregation (index.ts)
+│   │       ├── app.ts           # Express app wiring
+│   │       └── server.ts        # entrypoint
+│   └── web/                     # Next.js 14 frontend
+│       └── src/
+│           ├── app/             # App Router — (auth) and (protected) route groups
+│           ├── components/      # layout/ and ui/ (shared presentational components)
+│           ├── features/        # feature modules, e.g. auth/, dashboard/
+│           ├── lib/             # api client, auth helpers, csv/format/payroll utils
+│           └── test/            # vitest setup
+├── packages/
+│   ├── db/                      # Prisma schema, migrations, seed script
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma
+│   │   │   ├── migrations/
+│   │   │   └── seed.ts
+│   │   └── src/index.ts         # exports the Prisma client
+│   ├── shared/                  # Zod schemas + types shared by api and web
+│   │   └── src/                 # *.schema.ts per domain, constants, envelope
+│   └── config/                  # shared tsconfig / eslint / prettier base configs
+├── docs/                        # architecture, API contract, database, decisions, UI spec
+├── UI/                          # hi-fi screen prototypes (.dc.html) + design handoff README
+├── build/                       # session protocol, state ledger, session specs, logs
+├── docker-compose.yml           # local Postgres 16 + Redis 7
+├── .env.example                 # root reference env (documents the full variable set)
+├── turbo.json                   # Turborepo task graph
+└── package.json                 # npm workspaces root
+```
 
 ## Documentation
 
@@ -82,16 +363,6 @@ in `build/sessions/`, and paste its **"▶ Copy-paste prompt"** into a fresh age
 | [`docs/UI_DESIGN_PROMPT.md`](./docs/UI_DESIGN_PROMPT.md) | Design system of record (tokens) + page specs |
 | [`UI/README.md`](./UI/README.md) | Built design handoff — per-screen anatomy, state model, open gaps |
 | [`docs/design-board.svg`](./docs/design-board.svg) | The team's detailed design board (source for ADR-012…019) |
-
-## Repository layout
-
-```text
-apps/        api (Express) · web (Next.js)
-packages/    db (Prisma) · shared (Zod + types) · config (tsconfig/eslint/prettier)
-docs/        architecture, api, database, decisions, ui spec
-UI/          hi-fi screen prototypes (.dc.html) + design handoff README
-build/       session protocol, state ledger, session specs, logs
-```
 
 ## License
 
