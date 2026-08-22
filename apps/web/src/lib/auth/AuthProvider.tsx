@@ -4,6 +4,22 @@ import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { authStore, type AuthUser } from './auth-store';
 import { api } from '../api/client';
 
+/** Raw shape of `GET /employees/me` — the auth fields live under nested `user`. */
+interface RawMeProfile {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  profilePicture?: string | null;
+  designation?: string | null;
+  workStatus?: AuthUser['workStatus'];
+  user?: {
+    role?: AuthUser['role'];
+    loginId?: string;
+    mustChangePassword?: boolean;
+  };
+}
+
 export interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
@@ -35,13 +51,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const token = await api.refresh();
       if (token) {
-        // If user info is not present, fetch from /employees/me or keep user
+        // On reload the token is restored but the user isn't — rehydrate it from
+        // /employees/me. Role/loginId live under the nested `user` object.
         const currentUser = authStore.getUser();
         if (!currentUser) {
           try {
-            const profile = await api.get<AuthUser>('/employees/me');
-            if (profile) {
-              authStore.setUser(profile);
+            const p = await api.get<RawMeProfile>('/employees/me');
+            if (p) {
+              authStore.setUser({
+                id: p.id,
+                email: p.email,
+                role: p.user?.role ?? 'EMPLOYEE',
+                firstName: p.firstName,
+                lastName: p.lastName,
+                loginId: p.user?.loginId,
+                mustChangePassword: p.user?.mustChangePassword,
+                avatarUrl: p.profilePicture ?? null,
+                jobTitle: p.designation ?? null,
+                workStatus: p.workStatus,
+              });
             }
           } catch {
             // Profile fetch optional on boot

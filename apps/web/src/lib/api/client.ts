@@ -35,10 +35,12 @@ async function performTokenRefresh(): Promise<string | null> {
       }>;
 
       if (json.success && json.data?.accessToken) {
-        const currentUser = authStore.getUser();
-        const updatedUser = json.data.user || currentUser;
-        if (updatedUser) {
-          authStore.setSession(json.data.accessToken, updatedUser);
+        // Always persist the fresh access token, even before the user is known
+        // (on a hard reload `/auth/refresh` returns only the token). The
+        // AuthProvider then rehydrates the user from `/employees/me`.
+        authStore.setToken(json.data.accessToken);
+        if (json.data.user) {
+          authStore.setUser(json.data.user);
         }
         return json.data.accessToken;
       }
