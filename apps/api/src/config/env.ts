@@ -14,6 +14,8 @@ const EnvSchema = z.object({
   JWT_ACCESS_EXPIRY: z.string().min(1).default('15m'),
   JWT_REFRESH_EXPIRY: z.string().min(1).default('7d'),
   CORS_ORIGIN: z.string().min(1).default('http://localhost:3000'),
+  /** Email delivery provider (ADR-003). `console` logs instead of sending. */
+  EMAIL_PROVIDER: z.string().min(1).default('console'),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

@@ -6,6 +6,8 @@ import { Prisma, type SalaryStructure } from '@dayflow/db';
 import type { Role, SalaryConfigInput } from '@dayflow/shared';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError } from '../../lib/errors.js';
+import { writeAudit } from '../audit/audit.service.js';
+import { notify } from '../notification/notification.service.js';
 import { DEFAULT_SALARY_CONFIG, computeSalary } from './payroll.calc.js';
 import { renderPayslipPdf } from './payslip.pdf.js';
 import type { PayrollListWithCursorQuery } from './payroll.schema.js';
@@ -15,18 +17,42 @@ const pad2 = (n: number): string => String(n).padStart(2, '0');
 const monthKey = (year: number, month: number): string => `${year}-${pad2(month)}`;
 
 /**
- * S09 audit hook stub (do NOT implement the real audit trail here — see the
- * session file for S08). S09 wires this up to write an `AuditLog` row and fire
- * a notification; until then it is a safe no-op so callers can depend on it now.
- * TODO(S09): persist an AuditLog row + notify() for salary-structure changes.
+ * Records a salary-structure change in the audit trail and tells the employee
+ * their salary was updated (S09 filled this hook, which S08 left as a no-op).
+ *
+ * Fire-and-forget: the signature stays synchronous so the caller's path is
+ * untouched, and `writeAudit`/`notify` swallow their own failures.
  */
-export function auditPayrollUpdate(_event: {
+export function auditPayrollUpdate(event: {
   actorUserId: string;
   employeeId: string;
   oldValues: SalaryStructure | null;
   newValues: SalaryStructure;
 }): void {
-  // no-op in S08.
+  void (async () => {
+    await writeAudit({
+      userId: event.actorUserId,
+      action: 'SALARY_STRUCTURE_UPDATED',
+      entity: 'SalaryStructure',
+      entityId: event.newValues.id,
+      oldValues: event.oldValues,
+      newValues: event.newValues,
+    });
+
+    const employee = await prisma.employee.findUnique({
+      where: { id: event.employeeId },
+      select: { userId: true },
+    });
+    if (!employee) return;
+
+    await notify({
+      userId: employee.userId,
+      type: 'SALARY_UPDATED',
+      title: 'Salary structure updated',
+      body: 'Your salary structure has been updated. Check your payroll page for details.',
+      payload: { employeeId: event.employeeId },
+    });
+  })();
 }
 
 /** Shared "earnings + deductions + gross + net" shape reused by `/me` and salary-structure. */

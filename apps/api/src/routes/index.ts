@@ -12,6 +12,8 @@ import { companyRouter } from '../modules/company/company.route.js';
 import { attendanceRouter } from '../modules/attendance/attendance.route.js';
 import { leaveRouter } from '../modules/leave/leave.routes.js';
 import { payrollRouter } from '../modules/payroll/payroll.routes.js';
+import { notificationsRouter } from '../modules/notification/notification.routes.js';
+import { eventsRouter } from '../modules/realtime/realtime.routes.js';
 
 export const router = Router();
 
@@ -27,4 +29,5 @@ router.use('/company', companyRouter);
 router.use('/attendance', attendanceRouter);
 router.use('/leaves', leaveRouter);
 router.use('/payroll', payrollRouter);
-// TODO(S09): router.use('/notifications', notificationsRouter); router.use('/events', eventsRouter)
+router.use('/notifications', notificationsRouter);
+router.use('/events', eventsRouter);

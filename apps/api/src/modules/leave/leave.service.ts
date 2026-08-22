@@ -174,7 +174,12 @@ export async function approveLeave(reviewerUserId: string, leaveId: string): Pro
     return result;
   });
 
-  notifyLeaveDecision({ employeeId: updated.employeeId, leaveId: updated.id, status: 'APPROVED' });
+  notifyLeaveDecision({
+    employeeId: updated.employeeId,
+    leaveId: updated.id,
+    status: 'APPROVED',
+    reviewerUserId,
+  });
   return updated;
 }
 
@@ -207,6 +212,7 @@ export async function rejectLeave(
     leaveId: updated.id,
     status: 'REJECTED',
     reason,
+    reviewerUserId,
   });
   return updated;
 }
