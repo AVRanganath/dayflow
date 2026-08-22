@@ -18,6 +18,12 @@ enum Gender {
   OTHER
 }
 
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  OTHER
+}
+
 enum EmploymentType {
   FULL_TIME
   PART_TIME
@@ -53,12 +59,27 @@ enum PayrollStatus {
   PAID
 }
 
+// Company / organization entity holding branding + payroll settings (ADR-016)
+model Company {
+  id            String   @id @default(uuid())
+  name          String
+  logoUrl       String?
+  loginIdPrefix String   @default("OI") // Feeds the auto-generated Login ID (ADR-012)
+  settings      Json? // PF employee %, PF employer %, professionalTax, component default %s, defaultWorkingDaysPerWeek
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  employees Employee[]
+}
+
 // User model for authentication and core identity
 model User {
   id                     String    @id @default(uuid())
   email                  String    @unique
+  loginId                String    @unique // Auto-generated Login ID (ADR-012), e.g. OIJODO20220001
   passwordHash           String
   role                   Role
+  mustChangePassword     Boolean   @default(true) // Force password change after first login (ADR-012)
   isEmailVerified        Boolean   @default(false)
   emailVerificationToken String?
   passwordResetToken     String?
@@ -67,70 +88,98 @@ model User {
   isActive               Boolean   @default(true)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
-  
-  employee               Employee?
-  auditLogs              AuditLog[]
+
+  employee  Employee?
+  auditLogs AuditLog[]
 
   @@index([email])
 }
 
 // Employee profile detailing personal and work-related information
 model Employee {
-  id              String         @id @default(uuid())
-  userId          String         @unique
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  employeeId      String         @unique // e.g., 'EMP001'
-  firstName       String
-  lastName        String
-  email           String         // Work email
-  phone           String?
-  dateOfBirth     DateTime?      @db.Date
-  gender          Gender?
-  address         String?
-  city            String?
-  state           String?
-  country         String?
-  zipCode         String?
-  profilePicture  String?
-  departmentId    String?
-  department      Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  designation     String?
-  dateOfJoining   DateTime       @db.Date
-  employmentType  EmploymentType
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                 String         @id @default(uuid())
+  userId             String         @unique
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId          String?
+  company            Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  employeeId         String         @unique // e.g., 'EMP001'
+  employeeCode       String? // a.k.a. Emp Code; may equal employeeId (ADR-015)
+  firstName          String
+  lastName           String
+  email              String // Work email
+  personalEmail      String?
+  phone              String?
+  dateOfBirth        DateTime?      @db.Date
+  gender             Gender?
+  maritalStatus      MaritalStatus?
+  nationality        String?
+  address            String?
+  city               String?
+  state              String?
+  country            String?
+  zipCode            String?
+  profilePicture     String?
+  panNumber          String?
+  uanNumber          String? // PF Universal Account Number
+  bankAccountNumber  String?
+  bankName           String?
+  bankIfsc           String?
+  departmentId       String?
+  department         Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designation        String?
+  dateOfJoining      DateTime       @db.Date
+  employmentType     EmploymentType
+  workingDaysPerWeek Int            @default(5)
+
+  // Reporting manager (self-relation, ADR-015)
+  managerId String?
+  manager   Employee?  @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  reports   Employee[] @relation("EmployeeManager")
+
+  // Optional "Resume" tab content (ADR-015)
+  about          String?  @db.Text
+  whatILove      String?  @db.Text
+  hobbies        String?  @db.Text
+  skills         String[]
+  certifications String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   attendances     Attendance[]
-  leaveRequests   LeaveRequest[] @relation("EmployeeLeaves")
+  leaveRequests   LeaveRequest[]   @relation("EmployeeLeaves")
   leaveBalances   LeaveBalance[]
   payrollRecords  PayrollRecord[]
-  reviewedLeaves  LeaveRequest[] @relation("LeaveReviewer")
+  salaryStructure SalaryStructure?
+  reviewedLeaves  LeaveRequest[]   @relation("LeaveReviewer")
 }
 
 // Departments within the organization
 model Department {
-  id          String     @id @default(uuid())
-  name        String     @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  employees   Employee[]
+  employees Employee[]
 }
 
 // Daily attendance records
 model Attendance {
-  id          String           @id @default(uuid())
-  employeeId  String
-  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  date        DateTime         @db.Date
-  checkIn     DateTime?
-  checkOut    DateTime?
-  status      AttendanceStatus
-  hoursWorked Decimal?         @db.Decimal(5, 2)
-  notes       String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id           String           @id @default(uuid())
+  employeeId   String
+  employee     Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date         DateTime         @db.Date
+  checkIn      DateTime?
+  checkOut     DateTime?
+  status       AttendanceStatus
+  breakMinutes Int              @default(0)
+  hoursWorked  Decimal?         @db.Decimal(5, 2) // worked minus breaks (ADR-019)
+  extraHours   Decimal?         @db.Decimal(5, 2) // hours beyond the standard day (ADR-019)
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@unique([employeeId, date])
   @@index([employeeId])
@@ -148,6 +197,7 @@ model LeaveRequest {
   endDate         DateTime    @db.Date
   totalDays       Decimal     @db.Decimal(5, 2)
   reason          String      @db.Text
+  attachmentUrl   String? // Sick-leave certificate / supporting document (ADR-018)
   status          LeaveStatus @default(PENDING)
   reviewedById    String?
   reviewer        Employee?   @relation("LeaveReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
@@ -171,49 +221,85 @@ model LeaveBalance {
   totalAllowed Decimal   @db.Decimal(5, 2)
   used         Decimal   @default(0) @db.Decimal(5, 2)
   // Remaining is computed logically (totalAllowed - used)
-  
+
   @@unique([employeeId, leaveType, year])
 }
 
-// Monthly payroll records
+// Per-employee salary structure — the active component definition (ADR-013).
+// One active structure per employee; amounts auto-compute from monthlyWage.
+model SalaryStructure {
+  id          String   @id @default(uuid())
+  employeeId  String   @unique
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  monthlyWage Decimal  @db.Decimal(12, 2) // Wage that all components derive from
+
+  // Earning components (INR, ADR-008)
+  basic             Decimal @db.Decimal(12, 2) // 50% of Wage (default)
+  hra               Decimal @db.Decimal(12, 2) // 50% of Basic (default)
+  standardAllowance Decimal @db.Decimal(12, 2) // fixed / configured
+  performanceBonus  Decimal @db.Decimal(12, 2) // 8.33% of Basic (default)
+  lta               Decimal @db.Decimal(12, 2) // 8.33% of Basic (default)
+  fixedAllowance    Decimal @db.Decimal(12, 2) // balancer = Wage − sum(all above)
+
+  // Deduction config
+  pfEmployeePct   Decimal @db.Decimal(12, 2) // employee PF % of Basic (default 12)
+  pfEmployerPct   Decimal @db.Decimal(12, 2) // employer PF % of Basic (default 12, CTC only)
+  professionalTax Decimal @db.Decimal(12, 2) // fixed per-month, default ₹200
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Monthly computed payroll snapshot per [employeeId, month, year] (ADR-013/014).
 model PayrollRecord {
-  id                   String        @id @default(uuid())
-  employeeId           String
-  employee             Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  month                Int
-  year                 Int
-  basicSalary          Decimal       @db.Decimal(10, 2)
-  hra                  Decimal       @db.Decimal(10, 2)
-  conveyanceAllowance  Decimal       @db.Decimal(10, 2)
-  medicalAllowance     Decimal       @db.Decimal(10, 2)
-  specialAllowance     Decimal       @db.Decimal(10, 2)
-  providentFund        Decimal       @db.Decimal(10, 2)
-  professionalTax      Decimal       @db.Decimal(10, 2)
-  incomeTax            Decimal       @db.Decimal(10, 2)
-  grossSalary          Decimal       @db.Decimal(12, 2)
-  totalDeductions      Decimal       @db.Decimal(12, 2)
-  netSalary            Decimal       @db.Decimal(12, 2)
-  status               PayrollStatus @default(DRAFT)
-  paidAt               DateTime?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month       Int
+  year        Int
+  monthlyWage Decimal  @db.Decimal(12, 2)
+
+  // Earning components (snapshot)
+  grossSalary       Decimal @db.Decimal(12, 2) // = sum(earning components) = Wage
+  basic             Decimal @db.Decimal(12, 2)
+  hra               Decimal @db.Decimal(12, 2)
+  standardAllowance Decimal @db.Decimal(12, 2)
+  performanceBonus  Decimal @db.Decimal(12, 2)
+  lta               Decimal @db.Decimal(12, 2)
+  fixedAllowance    Decimal @db.Decimal(12, 2)
+
+  // Deductions (snapshot)
+  pfEmployee      Decimal @db.Decimal(12, 2) // deducted from take-home
+  pfEmployer      Decimal @db.Decimal(12, 2) // CTC only, not deducted
+  professionalTax Decimal @db.Decimal(12, 2)
+  totalDeductions Decimal @db.Decimal(12, 2) // pfEmployee + professionalTax
+
+  // Attendance-driven proration (ADR-014)
+  workingDays Int
+  payableDays Decimal @db.Decimal(5, 2)
+  netSalary   Decimal @db.Decimal(12, 2) // prorated take-home
+
+  status    PayrollStatus @default(DRAFT)
+  paidAt    DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   @@unique([employeeId, month, year])
 }
 
 // System audit logs for tracking actions
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action      String
-  entity      String
-  entityId    String
-  oldValues   Json?
-  newValues   Json?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  entity    String
+  entityId  String
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([entity])
