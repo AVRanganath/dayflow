@@ -9,7 +9,7 @@
 **Status legend:** `TODO` (not started) · `WIP` (in progress — put your branch name)
 · `DONE` (merged, acceptance criteria pass) · `BLOCKED` (see Blockers/notes).
 
-Last updated: 2026-08-22 · by: Ranganath (S13)
+Last updated: 2026-08-22 · by: Mukunda (S09)
 
 ---
 
@@ -33,7 +33,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S06 | Attendance module | DONE | Pramith | feat/s06-attendance | S03 | 5 attendance endpoints, exported `computeWorkStatus` helper (see detail) |
 | S07 | Leave module | DONE | Ranganath | feat/s07-leave | S03 | leave endpoints, balance logic, allocations (see detail) |
 | S08 | Payroll module | DONE | Chandan | feat/s08-payroll | S03 | payroll endpoints, salary engine, payslip PDF (see detail) |
-| S09 | Realtime + notifications + audit | TODO | Ranganath | — | S04–S08 | SSE endpoint, notify service, audit hook |
+| S09 | Realtime + notifications + audit | DONE | Mukunda | feat/s09-realtime | S04–S08 | SSE `/events` + Redis pub/sub, `notify()`, `writeAudit()`, `Notification` model (see detail) |
 | S10 | Web foundation | DONE | Pramith | feat/s10-web-foundation | S02 | api client (`get/post/put/patch/del`), AuthProvider, RequireAuth, AppShell, 11 UI primitives, formatINR |
 | S11 | Auth pages | DONE | Pramith | feat/s11-auth-pages | S10, S04 | `/signin`, `/signup` (onboarding), `/change-password`, `(auth)` layout, `features/auth` components |
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
@@ -420,6 +420,47 @@ Files under `apps/api/src/modules/attendance/` (layered route→controller→ser
   correctly instead of 404/500). **Unblocks:** S09 (audit hook to wire), S15 (payroll UI
   can build against these exact response shapes) — both still also need S04 for real auth.
 
+### S09 — Realtime + Notifications + Audit (DONE)
+- **Endpoints (base `/api/v1`):**
+  - `GET /events` (any auth) — **SSE stream** (ADR-009). `text/event-stream`; sends
+    `: connected`, then one frame per event (`event: <TYPE>` + `data: <json>`), plus a
+    `: ping` heartbeat every **25s**. Auth is `Authorization: Bearer` **only** —
+    browsers' `EventSource` can't set headers, so web clients must read the stream with
+    `fetch` (a `?token=` fallback was rejected: pino-http logs query strings).
+  - `GET /notifications/me` (any auth) — own notifications, newest first, cursor
+    paginated (`PaginationQuerySchema`; `meta.nextCursor`).
+  - `PATCH /notifications/:id/read` (any auth, **owner only** → else `403 FORBIDDEN`,
+    unknown id → `404`) — sets `isRead=true`, returns the row.
+- **Frame payload:** `{ type, payload, at }`. `payload` always carries
+  `notification: { id, type, title, body }`; leave events add `{ leaveId, status }`,
+  attendance events spread the check-in/out result.
+- **Event types emitted so far:** `LEAVE_APPROVED`, `LEAVE_REJECTED`, `SALARY_UPDATED`,
+  `ATTENDANCE_CHECKED_IN`, `ATTENDANCE_CHECKED_OUT`.
+- **`apps/api/src/modules/realtime/pubsub.ts`:**
+  - `publish(userId: string, type: string, payload: Record<string, unknown>): Promise<void>`
+    — swallows its own errors; safe to `void` from any call site.
+  - `subscribeUser(userId: string, listener: (e: RealtimeEvent) => void): () => void`
+    — returns the unsubscribe fn.
+  - `userChannel(userId)` → **`events:user:<userId>`**. Publishing uses the shared
+    `redis` client; subscribing uses a `redis.duplicate()` (subscribe mode can't run
+    normal commands) with a single `psubscribe('events:user:*')` per instance,
+    dispatched locally by channel. **Cross-instance delivery is verified.**
+- **`apps/api/src/modules/notification/notification.service.ts`:**
+  - `notify({ userId, type, title, body, payload?, email? }): Promise<void>` — writes the
+    `Notification` row, publishes the SSE event, optionally emails. **`userId` is a
+    `User.id`, not an `Employee.id`.** Never throws (log-and-swallow).
+  - `listMine(userId, limit, cursor?)`, `markRead(userId, id)`.
+- **`apps/api/src/modules/notification/providers/email.provider.ts`:**
+  `interface EmailProvider { send({ to, subject, body }): Promise<void> }`; the
+  `console` provider logs instead of sending (ADR-003). Selected by the new
+  **`EMAIL_PROVIDER`** env var (default `console`, added to `env.ts` + `.env.example`).
+- **`apps/api/src/modules/audit/audit.service.ts`:**
+  `writeAudit({ userId, action, entity, entityId, oldValues?, newValues?, ipAddress?,
+  userAgent? }): Promise<void>` (log-and-swallow) + `requestContext(req)` →
+  `{ ipAddress, userAgent }`. Actions written today: `LEAVE_APPROVED`,
+  `LEAVE_REJECTED`, `SALARY_STRUCTURE_UPDATED`, `EMPLOYEE_UPDATED`.
+- Unblocks S12/S14 live UX and the header notification bell.
+
 ### S07 — Leave module (DONE)
 - **Router:** `apps/api/src/modules/leave/leave.routes.ts` exports `leaveRouter`,
   mounted at `/leaves` in `apps/api/src/routes/index.ts` (replaced S03's TODO
@@ -657,3 +698,35 @@ never redefine. Files under `packages/shared/src/`:
   two commands once. Also: `apps/api/.env` isn't picked up by root-level
   `npm run db:*` scripts (they need `DATABASE_URL` in the shell env directly, since
   those proxy straight to `prisma` without `tsx --env-file`).
+- **🚨 S09 — SCHEMA CHANGE: the `Notification` model was added** (ADR-011) plus the
+  `User.notifications` relation, with migration
+  `20260822102151_add_notification`. **Every in-flight backend session must rebase on
+  `main` after S09 merges**, then run `npm run db:migrate` (or `db:deploy`) and
+  `npm run db:generate`. Shape:
+  `Notification { id, userId FK→User cascade, type, title, body, isRead @default(false),
+  createdAt }` with `@@index([userId, isRead])`. No shared-package (`@dayflow/shared`)
+  change was needed.
+- **S09 — new env var `EMAIL_PROVIDER`** (default `console`, ADR-003), added to
+  `apps/api/src/config/env.ts` and `apps/api/.env.example`. Existing `.env` files keep
+  working (it has a default) — copy the line over when convenient.
+- **S09 — files owned by other sessions that S09 edited to wire its hooks** (all edits
+  minimal; no earlier module was redesigned):
+  - `apps/api/src/modules/leave/leave.hooks.ts` — the S07 stub, now the real
+    notify + audit fan-out. **`LeaveDecisionEvent` gained `reviewerUserId`** (the audit
+    needs an actor), so `apps/api/src/modules/leave/leave.service.ts` passes it at both
+    the approve and reject call sites.
+  - `apps/api/src/modules/payroll/payroll.service.ts` — S08's `auditPayrollUpdate`
+    stub implemented (audit row + `SALARY_UPDATED` notification); two imports added.
+  - `apps/api/src/modules/attendance/attendance.controller.ts` — S06 left **no**
+    attendance hook, so `publish(...)` is called directly on check-in/check-out
+    (spec 3.5.2).
+  - `apps/api/src/modules/employee/employee.controller.ts` — **S05 exposes no
+    role-change path** (`AdminUpdateEmployeeSchema` has no `role` field), so the
+    role-change audit the S09 spec expected does not exist. `PUT /employees/:id` writes
+    an `EMPLOYEE_UPDATED` audit row instead; `oldValues` is not captured.
+  - `apps/api/src/routes/index.ts` — mounted `/notifications` and `/events` (replaced
+    S03's TODO comment).
+  - `apps/api/src/config/env.ts` — `EMAIL_PROVIDER`.
+- **Two files were already Prettier-dirty on `main` before S09**
+  (`apps/api/src/modules/attendance/{attendance.service,work-status}.ts`, both S06's).
+  Left untouched — `npm run format:check` still flags exactly those two.

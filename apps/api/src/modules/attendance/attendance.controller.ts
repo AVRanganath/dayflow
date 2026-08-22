@@ -12,6 +12,7 @@ import type {
 import { UnauthorizedError } from '../../lib/errors.js';
 import { sendSuccess } from './attendance.http.js';
 import { toDateOnly } from './work-status.js';
+import { publish } from '../realtime/pubsub.js';
 import * as service from './attendance.service.js';
 
 /** Reads the authenticated `User.id` set by `requireAuth`, or 401 if absent. */
@@ -25,6 +26,8 @@ export async function checkIn(req: Request, res: Response): Promise<void> {
   const employeeId = await service.resolveEmployeeId(userId(req));
   const body = req.body as CheckInInput;
   const result = await service.checkIn(employeeId, body);
+  // S09: reflect the change in any open SSE stream for this user (spec 3.5.2).
+  void publish(userId(req), 'ATTENDANCE_CHECKED_IN', { ...result });
   sendSuccess(res, 201, result);
 }
 
@@ -33,6 +36,7 @@ export async function checkOut(req: Request, res: Response): Promise<void> {
   const employeeId = await service.resolveEmployeeId(userId(req));
   const body = req.body as CheckOutInput;
   const result = await service.checkOut(employeeId, body);
+  void publish(userId(req), 'ATTENDANCE_CHECKED_OUT', { ...result });
   sendSuccess(res, 200, result);
 }
 
