@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dayflow/db": "*",
@@ -33,6 +34,8 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.5.4",
-    "tsx": "^4.19.1"
+    "@vitest/coverage-v8": "^4.1.11",
+    "tsx": "^4.19.1",
+    "vitest": "^4.1.11"
   }
 }

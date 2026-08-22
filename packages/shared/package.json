@@ -12,12 +12,15 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@dayflow/config": "*"
+    "@dayflow/config": "*",
+    "@vitest/coverage-v8": "^4.1.11",
+    "vitest": "^4.1.11"
   }
 }
