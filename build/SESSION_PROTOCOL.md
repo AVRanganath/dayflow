@@ -142,6 +142,31 @@ note it in your log so it becomes durable.
 
 ---
 
+## 3b. Working as a team (parallel sessions across several people)
+
+Several people (each driving their own agent in their own chat) can build in parallel.
+The system is designed for it — follow these rules and 4 chats never collide.
+
+1. **Pick a runnable session.** In `build/STATE.md`, take a session that is `TODO`
+   **and** whose "Depends on" are all `DONE`, **and** that `plan.md §5` marks
+   parallelizable. If its deps aren't done, it's not ready — pick another.
+2. **Claim it before you start.** Set its Status → `WIP`, put your name in **Owner**
+   and your branch in **Branch**, and commit that one-line edit to `main` first. This
+   is the lock — teammates now see it's taken. (Two people editing different rows
+   won't conflict; if you push at the same moment, re-pull and re-add your row.)
+3. **Disjoint files only.** Parallel sessions must touch different folders (e.g. one
+   person in `apps/api/src/modules/leave/`, another in `.../payroll/`). If your
+   session needs to change a shared file another live session also touches, coordinate
+   in person or serialize — don't both edit it.
+4. **One session → one branch → one PR.** Merge into `main` when acceptance criteria
+   pass. Because scopes are disjoint, merge order doesn't matter.
+5. **The two bottlenecks.** `S00` gates everyone (run it solo first). Then `S01`+`S02`
+   run together; `S03` unlocks the whole backend and `S10` unlocks the whole frontend.
+   After S03 and S10 land, the feature sessions fan out with no further waiting.
+6. **Rebase after a contract change.** If someone merges a shared-contract change
+   (schema, `packages/shared`, `docs/API.md` — they'll flag it in STATE.md
+   "Blockers/notes"), pull `main` into your branch before continuing.
+
 ## 4. Session lifecycle cheat-sheet
 
 ```
