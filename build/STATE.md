@@ -87,7 +87,8 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 - **Env:** `.env.example`, `apps/api/.env.example`, `apps/web/.env.local.example`
   (defaults match docker-compose). `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dayflow?schema=public`.
 - **Verified:** `npm install`, `npm run typecheck`, `npm run lint`, `npm run format:check`
-  all green. **Not verified: `docker compose up -d`** — see Blockers.
+  all green. **`docker compose up -d` verified** — postgres + redis both report
+  `healthy`; `pg_isready` OK and `redis-cli ping` → PONG.
 
 ---
 
@@ -96,11 +97,12 @@ S14→S15) → ⑤ Ranganath S09 + Mukunda S12 → ⑥ all four on S16.
 > Put anything here that affects other agents: contract changes, schema changes,
 > discovered gotchas, decisions that need recording in `docs/DECISIONS.md`.
 
-- **⚠️ Docker not installed on the S00 machine.** `docker-compose.yml` is written and
-  YAML-valid, but `docker compose up -d` could not be executed/verified here. **S01
-  needs a running Postgres** — install Docker Desktop (or Colima) and run
-  `docker compose up -d`, or point `DATABASE_URL` at any Postgres 16. Anyone with
-  Docker should confirm the compose file boots both services.
+- **✅ Docker set up via Colima** (`colima start`, Docker CLI + compose plugin). `docker
+  compose up -d` verified: `dayflow-postgres` (:5432) and `dayflow-redis` (:6379) both
+  `healthy`. Teammates on their own machines: install Docker Desktop *or* Colima
+  (`brew install colima docker docker-compose && colima start`), then `docker compose
+  up -d`. On Colima, `docker compose` needs `cliPluginsExtraDirs` in `~/.docker/config.json`
+  (points to `/opt/homebrew/lib/docker/cli-plugins`).
 - **Prisma pinned to v6** (ADR-020). `npm install` in this hardened env skipped
   postinstall scripts, so the Prisma client is **not generated yet** — S01 runs
   `npm run db:generate` (and `db:migrate`) as its first steps.

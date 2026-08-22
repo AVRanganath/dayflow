@@ -54,9 +54,11 @@
 - `npm run format:check` → ✅ (code only; `.md` ignored).
 - `.env.example` files list every `plan.md §8` var → ✅.
 - No feature/business code → ✅ (only scaffold placeholders).
-- `docker compose up -d` starts postgres + redis healthy → ⚠️ **NOT VERIFIED.** Docker
-  is not installed on this machine (no Docker Desktop / Colima / Podman). The compose
-  file is written and YAML-valid; someone with Docker must confirm it boots.
+- `docker compose up -d` starts postgres + redis healthy → ✅ **VERIFIED** after
+  installing Docker via **Colima** (`brew install colima docker docker-compose`,
+  `colima start --cpu 2 --memory 4`). Both containers `(healthy)`; `pg_isready` OK,
+  `redis-cli ping` → PONG. On Colima, `docker compose` needs `cliPluginsExtraDirs`
+  in `~/.docker/config.json` → `/opt/homebrew/lib/docker/cli-plugins`.
 
 ## Handoff — what's now unblocked / TODO
 - **Unblocks S01 (Database) and S02 (Shared).** These can run in parallel.
