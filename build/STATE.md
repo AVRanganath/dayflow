@@ -39,7 +39,7 @@ Owner is the **assigned** person (below); set Status → `WIP` when you actually
 | S12 | Dashboards + analytics | TODO | Mukunda | — | S10, S06–S08 | `/dashboard` (both roles), charts |
 | S13 | Profile + directory | TODO | Pramith | — | S10, S05 | `/profile`, `/employees` |
 | S14 | Attendance + leave pages | TODO | Mukunda | — | S10, S06, S07 | `/attendance`, `/leaves`, approvals |
-| S15 | Payroll pages + reports | TODO | Mukunda | — | S10, S08 | `/payroll`, export |
+| S15 | Payroll pages + reports | DONE | Mukunda | feat/s15-payroll-reports | S10, S08 | `/payroll` (employee read-only + admin surface), `lib/payroll.ts` fetchers, CSV export, salary recompute — **runtime blocked on S08** (see detail) |
 | S16 | Polish, tests, prod, demo | TODO | all four | — | all | Dockerfiles, tests, README, demo script |
 
 ### Assignment & order (who does what, and the gate to start)
@@ -333,6 +333,53 @@ Files under `apps/api/src/modules/attendance/` (layered route→controller→ser
   - `Button`, `Input`, `Select`, `Textarea`, `StatusBadge`, `DataTable`, `Modal`, `Avatar`, `EmptyState`, `Toast` / `ToastProvider` (`useToast`), `ProgressBar`, `StatsCard`.
 - **Formatters (`apps/web/src/lib/format.ts`):**
   - `formatINR(amount)` (e.g. ₹42,50,000), `formatHours(val, isMinutes?)`, `formatDate(date)`, `initials(name)`, `getAvatarColor(name)`.
+
+### S15 — Payroll pages + reports (DONE)
+- **Route:** `/payroll` at `apps/web/src/app/(protected)/payroll/page.tsx` (the app router
+  group is `(protected)`, not `(app)`). Renders for **all** roles: the employee sees a
+  read-only INR (ADR-008) payroll surface from `GET /payroll/me`; **ADMIN/HR** additionally
+  see the company payroll surface below it. Salary edit is **ADMIN-only** (ADR-001); HR sees
+  the table + CSV export but no edit action. Sidebar already links `/payroll` (S10).
+- **Components** (`apps/web/src/app/(protected)/payroll/_components/`):
+  `current-salary-card.tsx` (plum→dark hero, big Net in INR, Processed/Pending badge,
+  Download Payslip → blob), `salary-breakdown.tsx` (ADR-013/014 two-column: Basic, HRA,
+  Standard Allowance, Performance Bonus, LTA, Fixed Allowance → Gross; PF employee+employer,
+  Professional Tax → Total Deductions; payable-days box + highlighted Net bar),
+  `salary-history-table.tsx` (last-12-months, per-row payslip download),
+  `admin-payroll-table.tsx` (search + bulk table, CSV Export, Process-Payroll button
+  **disabled**), `edit-salary-modal.tsx` (**ADMIN-only** wage editor with live ADR-013
+  recompute, Fixed Allowance balancer).
+- **API helper (`apps/web/src/lib/payroll.ts`):** `getMyPayroll()`, `listPayroll(params)`,
+  `getEmployeePayroll(id)` (→ `GET /payroll/:id/salary-structure`),
+  `updateSalaryStructure(id, { wage })` (→ `PUT …/salary-structure`, sends both
+  `monthlyWage` and `wage`), `downloadPayslip(id, {month,year})` (returns a `Blob`, auth
+  header attached), `triggerBlobDownload(blob, name)`, `toCsv(rows, cols)` +
+  `downloadCsv(...)` (CSV util, differentiator #5 — S14 had none to reuse),
+  `computeSalary(wage, config?)` (pure ADR-013 recompute for the edit preview) +
+  `SALARY_DEFAULTS`, `formatPayMonth(ymd)`. Response types (`MyPayroll`, `SalaryStructure`,
+  `PayrollListRow`, `Payslip`, …) mirror `docs/API.md` §5.
+- **⚠️ Runtime blocked on S08.** S08 (payroll API) is **not merged**, so `GET /payroll/me`,
+  `GET /payroll`, the salary-structure GET/PUT and the payslip PDF do not exist yet. The UI
+  is wired to the documented contract via the typed api client and renders graceful
+  loading/empty/error states (no fake numbers shipped). Once S08 lands it should work
+  without UI changes, modulo the contract notes below.
+- **Contract notes for S08 to honor / reconcile:**
+  - Payslip download uses `GET /payroll/:id/payslip?month&year`; the UI passes `user.id`
+    (the auth principal is `User.id`) as `:id` — S08 must accept the caller's own id for
+    self-download, or expose the payroll-record id in `GET /payroll/me` history so the UI
+    can use that. If `payslipUrl` in the history is a real authenticated URL, that also works.
+  - `updateSalaryStructure` sends **both** `monthlyWage` (docs/API.md §5) and `wage`
+    (the `SalaryStructureSchema` field). S08 should accept `monthlyWage` per the docs; the
+    dual key is a hedge — pick one and align docs.
+  - **No process-payroll endpoint** exists in the S08 contract, so the "Process Payroll"
+    button is **disabled with a tooltip**. If S08 adds one, wire it in `admin-payroll-table.tsx`.
+- **Build gotcha (important for all frontend sessions):** `@dayflow/shared`'s barrel
+  re-exports use `.js` specifiers that **Next's webpack cannot resolve** against the `.ts`
+  sources. Importing any *value* (e.g. `API_ROUTES`, a Zod schema) from `@dayflow/shared`
+  into web code **breaks `next build`**. Type-only imports are fine (erased). S15 therefore
+  inlines the payroll route strings and validates the wage inline. **Fix for the monorepo
+  (S16?):** add `transpilePackages: ['@dayflow/shared']` to `next.config` or emit/point at
+  `dist`. Until then, keep web→shared imports type-only.
 
 ### S02 — Shared package `@dayflow/shared` (DONE)
 Import everything from `@dayflow/shared`. Every type is `z.infer` from its schema —
