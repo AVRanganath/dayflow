@@ -36,3 +36,6 @@ npm-debug.log*
 
 # test / coverage
 coverage/
+
+# runtime file uploads (S07 — leave attachments)
+apps/api/uploads/
